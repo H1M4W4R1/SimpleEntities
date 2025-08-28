@@ -1,5 +1,4 @@
-﻿using System;
-using Systems.SimpleEntities.Components;
+﻿using Systems.SimpleEntities.Components;
 using UnityEngine;
 
 namespace Systems.SimpleEntities.Examples.Status

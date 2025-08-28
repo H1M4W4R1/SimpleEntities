@@ -1,16 +1,20 @@
-﻿using JetBrains.Annotations;
+﻿using System;
+using JetBrains.Annotations;
+using Systems.SimpleEntities.Data.Status.Abstract;
+using UnityEngine;
 
-namespace Systems.SimpleEntities.Data.Status
+namespace Systems.SimpleEntities.Data.Status.Storage
 {
     /// <summary>
     ///     Contains data about applied status
     /// </summary>
+    [Serializable]
     public struct AppliedStatusData
     {
         /// <summary>
         ///     Status that is applied
         /// </summary>
-        [NotNull] public readonly StatusBase status;
+        [NotNull] [SerializeReference] public readonly StatusBase status;
         
         /// <summary>
         ///     Current stack count

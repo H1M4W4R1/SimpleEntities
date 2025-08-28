@@ -1,5 +1,5 @@
 ﻿using Systems.SimpleEntities.Data.Context;
-using Systems.SimpleEntities.Data.Status;
+using Systems.SimpleEntities.Data.Status.Abstract;
 using UnityEngine;
 
 namespace Systems.SimpleEntities.Examples.Status

@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2993cf9f0d4f42318f31a9d1daabd729, type: 3}
   m_Name: BurningStatusExample
   m_EditorClassIdentifier: 
-  <MaxStack>k__BackingField: 0
+  <MaxStack>k__BackingField: 5

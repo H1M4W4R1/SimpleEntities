@@ -1,11 +1,13 @@
 ﻿using System.Collections.Generic;
 using JetBrains.Annotations;
+using Sirenix.Serialization;
 using Systems.SimpleEntities.Data;
 using Systems.SimpleEntities.Data.Affinity;
 using Systems.SimpleEntities.Data.Context;
 using Systems.SimpleEntities.Data.Resistances;
-using Systems.SimpleEntities.Data.Status;
+using Systems.SimpleEntities.Data.Status.Abstract;
 using Systems.SimpleEntities.Data.Status.Enums;
+using Systems.SimpleEntities.Data.Status.Storage;
 using Systems.SimpleStats.Abstract;
 using Systems.SimpleStats.Abstract.Modifiers;
 using Systems.SimpleStats.Data;
@@ -23,6 +25,22 @@ namespace Systems.SimpleEntities.Components
     /// </remarks>
     public abstract class EntityBase : MonoBehaviour, IWithStatModifiers
     {
+#region Save and Load
+
+        // TODO: Better solution for save/load system?
+        public byte[] Save() =>
+            SerializationUtility.SerializeValue(appliedStatuses, DataFormat.Binary);
+
+        public void Load(byte[] data)
+        {
+            List<AppliedStatusData> parsedData =
+                SerializationUtility.DeserializeValue<List<AppliedStatusData>>(data, DataFormat.Binary);
+            appliedStatuses.Clear();
+            appliedStatuses.AddRange(parsedData);
+        }
+
+#endregion
+
 #region Unity Lifecycle
 
         protected void Awake()

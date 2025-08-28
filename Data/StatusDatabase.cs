@@ -1,6 +1,6 @@
 ﻿using JetBrains.Annotations;
 using Systems.SimpleCore.Storage;
-using Systems.SimpleEntities.Data.Status;
+using Systems.SimpleEntities.Data.Status.Abstract;
 
 namespace Systems.SimpleEntities.Data
 {

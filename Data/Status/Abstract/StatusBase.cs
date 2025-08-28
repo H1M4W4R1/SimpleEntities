@@ -1,7 +1,7 @@
 ﻿using Systems.SimpleEntities.Data.Context;
 using UnityEngine;
 
-namespace Systems.SimpleEntities.Data.Status
+namespace Systems.SimpleEntities.Data.Status.Abstract
 {
     /// <summary>
     ///     Represents a status effect that can be applied to entities
