@@ -294,13 +294,13 @@ namespace Systems.SimpleEntities.Components
         {
             // Find status if already applied
             AppliedStatusData statusReference = default;
+            int statusReferenceIndex = -1;
             for (int i = 0; i < appliedStatuses.Count; i++)
             {
-                if (appliedStatuses[i].status == status)
-                {
-                    statusReference = appliedStatuses[i];
-                    break;
-                }
+                if (appliedStatuses[i].status != status) continue;
+                statusReference = appliedStatuses[i];
+                statusReferenceIndex = i;
+                break;
             }
 
             // If status is not applied, apply it
@@ -314,13 +314,14 @@ namespace Systems.SimpleEntities.Components
             }
 
             // If status is already applied, check if it can be stacked (or if max stack is reached)
-            if (statusReference.stackCount + stackCount > status.MaxStack)
+            if (statusReference.stackCount + stackCount > status.MaxStack && status.MaxStack > 0)
                 return ApplyStatusResult.MaxStackReached;
 
             // If status can be stacked, stack it
             StatusContext modifyStatusContext = new(this, status, stackCount);
             statusReference.stackCount += stackCount;
             statusReference.status.OnStatusStackChanged(modifyStatusContext);
+            appliedStatuses[statusReferenceIndex] = statusReference;
             return ApplyStatusResult.Success;
         }
 
