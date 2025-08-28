@@ -1,13 +1,23 @@
-﻿using Systems.SimpleEntities.Components;
+﻿using JetBrains.Annotations;
+using Systems.SimpleEntities.Components;
 using Systems.SimpleEntities.Data.Status;
 
 namespace Systems.SimpleEntities.Data.Context
 {
+    /// <summary>
+    ///     Status context for handling all status events, common between apply, remove and stack changed
+    /// </summary>
     public readonly ref struct StatusContext
     {
-        public readonly EntityBase entity;
+        /// <summary>
+        ///     Entity that has the status
+        /// </summary>
+        [NotNull] public readonly EntityBase entity;
         
-        public readonly StatusBase status;
+        /// <summary>
+        ///     Status that is applied to the entity
+        /// </summary>
+        [NotNull] public readonly StatusBase status;
         
         /// <summary>
         ///     Stack count or changed amount
@@ -18,7 +28,7 @@ namespace Systems.SimpleEntities.Data.Context
         /// </remarks>
         public readonly int stackCountOrChange;
 
-        public StatusContext(EntityBase entity, StatusBase status, int stackCountOrChange)
+        public StatusContext([NotNull] EntityBase entity, [NotNull] StatusBase status, int stackCountOrChange)
         {
             this.entity = entity;
             this.status = status;
