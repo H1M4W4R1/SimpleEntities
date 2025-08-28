@@ -1,9 +1,9 @@
 ﻿using System.Runtime.CompilerServices;
-using Systems.SimpleEntities.Affinity;
-using Systems.SimpleEntities.Resistances.Markers;
+using Systems.SimpleEntities.Data.Affinity;
+using Systems.SimpleEntities.Data.Resistances.Markers;
 using Systems.SimpleStats.Data.Statistics;
 
-namespace Systems.SimpleEntities.Resistances
+namespace Systems.SimpleEntities.Data.Resistances
 {
     
     /// <summary>

@@ -1,6 +1,6 @@
-﻿using Systems.SimpleEntities.Examples.Affinity;
-using Systems.SimpleEntities.Resistances;
-using Systems.SimpleEntities.Resistances.Markers;
+﻿using Systems.SimpleEntities.Data.Resistances;
+using Systems.SimpleEntities.Data.Resistances.Markers;
+using Systems.SimpleEntities.Examples.Affinity;
 using UnityEngine;
 
 namespace Systems.SimpleEntities.Examples.Resistances

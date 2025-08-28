@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using JetBrains.Annotations;
 using Systems.SimpleCore.Storage;
-using Systems.SimpleEntities.Affinity;
+using Systems.SimpleEntities.Data.Affinity;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Assertions;
 using UnityEngine.ResourceManagement.AsyncOperations;

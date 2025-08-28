@@ -1,6 +1,6 @@
 ﻿using JetBrains.Annotations;
-using Systems.SimpleEntities.Affinity;
 using Systems.SimpleEntities.Components;
+using Systems.SimpleEntities.Data.Affinity;
 using Unity.Mathematics;
 using UnityEngine.Assertions;
 

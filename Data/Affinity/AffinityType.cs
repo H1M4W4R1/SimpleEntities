@@ -1,7 +1,7 @@
 ﻿using Systems.SimpleEntities.Data.Context;
 using UnityEngine;
 
-namespace Systems.SimpleEntities.Affinity
+namespace Systems.SimpleEntities.Data.Affinity
 {
     /// <summary>
     ///     Type of damage, used to determine affinity

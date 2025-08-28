@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using JetBrains.Annotations;
-using Systems.SimpleEntities.Affinity;
+using Systems.SimpleEntities.Data.Affinity;
 using Systems.SimpleEntities.Data.Context;
-using Systems.SimpleEntities.Resistances;
+using Systems.SimpleEntities.Data.Resistances;
 using Systems.SimpleStats.Abstract;
 using Systems.SimpleStats.Abstract.Modifiers;
 using Systems.SimpleStats.Data;

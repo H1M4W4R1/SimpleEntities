@@ -1,4 +1,4 @@
-﻿using Systems.SimpleEntities.Affinity;
+﻿using Systems.SimpleEntities.Data.Affinity;
 using UnityEngine;
 
 namespace Systems.SimpleEntities.Examples.Affinity
