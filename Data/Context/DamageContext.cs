@@ -56,13 +56,13 @@ namespace Systems.SimpleEntities.Data.Context
             [NotNull] EntityBase target,
             [CanBeNull] object source,
             int amount)
-            where TDamageAffinity : AffinityType
+            where TDamageAffinity : AffinityType, new()
         {
             Assert.IsNotNull(target, "Target cannot be null");
             Assert.IsTrue(amount >= 0, "Amount of damage must be greater than or equal to zero");
             
             float resistanceValue = target.GetResistance<TDamageAffinity>();
-            return new DamageContext(target, source, AffinityDatabase.Get<TDamageAffinity>(), resistanceValue, amount);
+            return new DamageContext(target, source, AffinityDatabase.GetExact<TDamageAffinity>(), resistanceValue, amount);
         }
     }
 }

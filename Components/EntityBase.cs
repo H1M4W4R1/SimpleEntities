@@ -109,7 +109,7 @@ namespace Systems.SimpleEntities.Components
         public void Damage<TDamageAffinity>(
             [CanBeNull] object source,
             int amount)
-            where TDamageAffinity : AffinityType
+            where TDamageAffinity : AffinityType, new()
         {
             DamageContext context = DamageContext.Create<TDamageAffinity>(this, source, amount);
             Damage(context);
@@ -124,7 +124,7 @@ namespace Systems.SimpleEntities.Components
         public void Heal<THealingAffinity>(
             [CanBeNull] object source,
             int amount)
-            where THealingAffinity : AffinityType
+            where THealingAffinity : AffinityType, new()
         {
             HealContext context = HealContext.Create<THealingAffinity>(this, source, amount);
             Heal(context);
