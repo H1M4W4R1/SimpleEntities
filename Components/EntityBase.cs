@@ -1,10 +1,12 @@
 ﻿using System.Collections.Generic;
 using JetBrains.Annotations;
-using Systems.SimpleEntities.Data;
+using Systems.SimpleEntities.Affinity;
+using Systems.SimpleEntities.Data.Context;
+using Systems.SimpleEntities.Resistances;
 using Systems.SimpleStats.Abstract;
 using Systems.SimpleStats.Abstract.Modifiers;
+using Systems.SimpleStats.Data;
 using Systems.SimpleStats.Data.Collections;
-using Systems.SimpleStats.Data.Statistics;
 using UnityEngine;
 
 namespace Systems.SimpleEntities.Components
@@ -24,11 +26,11 @@ namespace Systems.SimpleEntities.Components
         {
             // Refresh entity modifiers for first time
             RefreshModifiersIfNecessary();
-            
+
             // Reset health to max
             ResetHealthToMax();
         }
-        
+
         /// <summary>
         ///     Resets health to max
         /// </summary>
@@ -53,6 +55,34 @@ namespace Systems.SimpleEntities.Components
         [field: SerializeField] public int MaxHealth { get; protected set; }
 
         /// <summary>
+        ///     Gets resistance of the entity
+        /// </summary>
+        /// <typeparam name="TAffinityType">Type of the affinity</typeparam>
+        /// <returns>Value of the resistance</returns>
+        public float GetResistance<TAffinityType>()
+            where TAffinityType : DamageAffinity
+        {
+            float result = 0;
+            
+            // Get all resistances from database
+            IReadOnlyList<ResistanceBase> resistances = StatsDatabase.GetAll<ResistanceBase>();
+
+            IWithStatModifiers statsAccess = this;
+            foreach (ResistanceBase resistance in resistances)
+            {
+                if (!resistance.IsValidFor<TAffinityType>()) continue;
+                
+                StatModifierCollection modifierCollection = new();
+                modifierCollection.AddRange(statsAccess.GetAllModifiersFor(resistance));
+
+                float finalValue = resistance.GetFinalValue(modifierCollection);
+                result += finalValue;
+            }
+            
+            return result;
+        }
+
+        /// <summary>
         ///     Heals the entity
         /// </summary>
         /// <param name="context">Context of the healing event</param>
@@ -65,8 +95,41 @@ namespace Systems.SimpleEntities.Components
             CurrentHealth += context.amount;
             CurrentHealth = Mathf.Clamp(CurrentHealth, 0, MaxHealth);
             OnHealReceived(context);
+            
+            if(!ReferenceEquals(context.healingAffinity, null))
+                context.healingAffinity.OnHealingReceived(context);
         }
 
+        /// <summary>
+        ///     Deals damage to the entity
+        /// </summary>
+        /// <param name="source">Source of the damage</param>
+        /// <param name="amount">Base amount of damage</param>
+        /// <typeparam name="TDamageAffinity">Affinity of the damage</typeparam>
+        public void Damage<TDamageAffinity>(
+            [CanBeNull] object source,
+            int amount)
+            where TDamageAffinity : DamageAffinity
+        {
+            DamageContext context = DamageContext.Create<TDamageAffinity>(this, source, amount);
+            Damage(context);
+        }
+        
+        /// <summary>
+        ///     Heals the entity
+        /// </summary>
+        /// <param name="source">Source of the healing</param>
+        /// <param name="amount">Base amount of healing</param>
+        /// <typeparam name="THealingAffinity">Affinity of the healing</typeparam>
+        public void Heal<THealingAffinity>(
+            [CanBeNull] object source,
+            int amount)
+            where THealingAffinity : DamageAffinity
+        {
+            HealContext context = HealContext.Create<THealingAffinity>(this, source, amount);
+            Heal(context);
+        }
+        
         /// <summary>
         ///     Deals damage to the entity
         /// </summary>
@@ -75,10 +138,13 @@ namespace Systems.SimpleEntities.Components
         {
             // Check if entity can be damaged
             if (!CanBeDamaged(context)) return;
-
+      
             // Subtract health and execute damage handlers
             CurrentHealth -= context.amount;
             OnDamageReceived(context);
+            
+            if(!ReferenceEquals(context.damageAffinity, null))
+                context.damageAffinity.OnDamageReceived(context);
 
             // If health is zero or less, kill the entity
             if (CurrentHealth <= 0) Kill(context);
@@ -104,6 +170,9 @@ namespace Systems.SimpleEntities.Components
 
             // Perform death events
             OnDeath(context);
+            
+            if(!ReferenceEquals(context.damageAffinity, null))
+                context.damageAffinity.OnDeath(context);
         }
 
         /// <summary>
@@ -165,31 +234,6 @@ namespace Systems.SimpleEntities.Components
         /// </summary>
         /// <returns>Read-only list of modifiers</returns>
         public IReadOnlyList<IStatModifier> GetAllModifiers() => statModifiers;
-
-        /// <summary>
-        ///     Gets modifiers for statistic
-        /// </summary>
-        /// <typeparam name="TStatisticType">Type of statistic</typeparam>
-        /// <returns>Enumerable of modifiers for statistic</returns>
-        [ItemNotNull] public IEnumerable<IStatModifier> GetModifiersFor<TStatisticType>()
-            where TStatisticType : StatisticBase
-        {
-            // Loop through modifiers and yield return only those that are of type TStatisticType
-            for (int index = 0; index < statModifiers.Count; index++)
-            {
-                IStatModifier modifier = statModifiers[index];
-                if (modifier is IStatModifier<TStatisticType>) yield return modifier;
-            }
-        }
-
-        /// <summary>
-        ///     Updates modifiers collection
-        /// </summary>
-        public void TransferModifiersTo<TStatisticType>(StatModifierCollection statModifierCollection)
-        {
-            RefreshModifiersIfNecessary();
-            statModifierCollection.AddRange(statModifiers);
-        }
 
         /// <summary>
         ///     Refresh statistic modifiers if necessary

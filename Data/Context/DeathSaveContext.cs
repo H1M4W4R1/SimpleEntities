@@ -1,4 +1,4 @@
-﻿namespace Systems.SimpleEntities.Data
+﻿namespace Systems.SimpleEntities.Data.Context
 {
     /// <summary>
     ///     Context for death save - used to determine if entity should be saved from death

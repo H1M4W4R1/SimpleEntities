@@ -1,4 +1,4 @@
-﻿using Systems.SimpleStats.Examples;
+﻿using Systems.SimpleEntities.Examples.Resistances;
 using Systems.SimpleStats.Implementations;
 
 namespace Systems.SimpleEntities.Examples.Entities
@@ -11,7 +11,7 @@ namespace Systems.SimpleEntities.Examples.Entities
         public override void RefreshModifiersIfNecessary()
         {
             statModifiers.Clear();
-            statModifiers.Add(new FlatAddModifier<ExampleFireResistanceStatistic>(1f));
+            statModifiers.Add(new FlatAddModifier<EntityFireResistance>(1f));
             base.RefreshModifiersIfNecessary();
         }
     }
