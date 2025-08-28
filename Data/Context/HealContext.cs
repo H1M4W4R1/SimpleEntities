@@ -62,7 +62,7 @@ namespace Systems.SimpleEntities.Data.Context
             Assert.IsTrue(amount >= 0, "Amount of healing must be greater than or equal to zero");
 
             float resistanceValue = target.GetResistance<TDamageAffinity>();
-            return new HealContext(target, source, AffinityDatabase.GetAffinity<TDamageAffinity>(), resistanceValue,
+            return new HealContext(target, source, AffinityDatabase.Get<TDamageAffinity>(), resistanceValue,
                 amount);
         }
     }

@@ -7,7 +7,8 @@
         "Unity.Collections",
         "Unity.Mathematics",
         "Unity.ResourceManager",
-        "SimpleStats"
+        "SimpleStats",
+        "SimpleCore"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
