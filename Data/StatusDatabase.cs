@@ -9,6 +9,7 @@ namespace Systems.SimpleEntities.Data
     /// </summary>
     public sealed class StatusDatabase : AddressableDatabase<StatusDatabase, StatusBase>
     {
-        [NotNull] protected override string AddressableLabel => "SimpleEntities.Status";
+        public const string LABEL = "SimpleEntities.Status";
+        [NotNull] protected override string AddressableLabel => LABEL;
     }
 }

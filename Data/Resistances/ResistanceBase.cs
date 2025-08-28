@@ -5,12 +5,13 @@ using Systems.SimpleStats.Data.Statistics;
 
 namespace Systems.SimpleEntities.Data.Resistances
 {
-    
     /// <summary>
     ///     Base class for resistance statistics with built-in support
     /// </summary>
     public abstract class ResistanceBase : StatisticBase
     {
+        public sealed override float BaseValue => 0;
+
         /// <summary>
         ///     Checks if this resistance is valid for the given affinity type
         /// </summary>

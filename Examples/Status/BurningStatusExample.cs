@@ -7,9 +7,10 @@ namespace Systems.SimpleEntities.Examples.Status
     /// <summary>
     ///     Burning status example
     /// </summary>
-    [CreateAssetMenu(fileName = "BurningStatusExample", menuName = "SimpleEntities/Status/BurningStatusExample")]
     public sealed class BurningStatusExample : StatusBase
     {
+        public override int MaxStack => 5;
+
         protected internal override void OnStatusApplied(in StatusContext context)
         {
             base.OnStatusApplied(in context);

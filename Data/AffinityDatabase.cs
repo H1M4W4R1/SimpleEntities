@@ -9,6 +9,8 @@ namespace Systems.SimpleEntities.Data
     /// </summary>
     public sealed class AffinityDatabase : AddressableDatabase<AffinityDatabase, AffinityType>
     {
-        [NotNull] protected override string AddressableLabel => "SimpleEntities.Affinity";
+        internal const string LABEL = "SimpleEntities.Affinity";
+        
+        [NotNull] protected override string AddressableLabel => LABEL;
     }
 }

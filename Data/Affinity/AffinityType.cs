@@ -1,4 +1,5 @@
-﻿using Systems.SimpleEntities.Data.Context;
+﻿using Systems.SimpleCore.Automation.Attributes;
+using Systems.SimpleEntities.Data.Context;
 using UnityEngine;
 
 namespace Systems.SimpleEntities.Data.Affinity
@@ -6,6 +7,7 @@ namespace Systems.SimpleEntities.Data.Affinity
     /// <summary>
     ///     Type of damage, used to determine affinity
     /// </summary>
+    [AutoCreatedObject("Affinities", AffinityDatabase.LABEL)]
     public abstract class AffinityType : ScriptableObject
     {
         /// <summary>
