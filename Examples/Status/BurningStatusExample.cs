@@ -9,8 +9,6 @@ namespace Systems.SimpleEntities.Examples.Status
     /// </summary>
     public sealed class BurningStatusExample : StatusBase
     {
-        public override int MaxStack => 5;
-
         protected internal override void OnStatusApplied(in StatusContext context)
         {
             base.OnStatusApplied(in context);

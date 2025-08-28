@@ -10,8 +10,6 @@ namespace Systems.SimpleEntities.Data.Resistances
     /// </summary>
     public abstract class ResistanceBase : StatisticBase
     {
-        public sealed override float BaseValue => 0;
-
         /// <summary>
         ///     Checks if this resistance is valid for the given affinity type
         /// </summary>
