@@ -13,7 +13,7 @@ namespace Systems.SimpleEntities.Data
     public static class AffinityDatabase
     {
         public const string ADDRESSABLE_LABEL = "SimpleEntities.Affinity";
-        private static readonly List<DamageAffinity> _items = new();
+        private static readonly List<AffinityType> _items = new();
 
         /// <summary>
         ///     If true this means that all objects have been loaded
@@ -55,7 +55,7 @@ namespace Systems.SimpleEntities.Data
             _isLoading = true;
 
             // Load items
-            AsyncOperationHandle<IList<DamageAffinity>> request = Addressables.LoadAssetsAsync<DamageAffinity>(
+            AsyncOperationHandle<IList<AffinityType>> request = Addressables.LoadAssetsAsync<AffinityType>(
                 new[] {ADDRESSABLE_LABEL}, OnItemLoaded,
                 Addressables.MergeMode.Union);
             request.WaitForCompletion();
@@ -63,7 +63,7 @@ namespace Systems.SimpleEntities.Data
             OnItemsLoadComplete(request);
         }
 
-        private static void OnItemsLoadComplete(AsyncOperationHandle<IList<DamageAffinity>> _)
+        private static void OnItemsLoadComplete(AsyncOperationHandle<IList<AffinityType>> _)
         {
             _isLoaded = true;
             _isLoading = false;
@@ -71,7 +71,7 @@ namespace Systems.SimpleEntities.Data
 
         private static void OnItemLoaded<TObject>(TObject obj)
         {
-            if (obj is not DamageAffinity item) return;
+            if (obj is not AffinityType item) return;
             _items.Add(item);
         }
 
@@ -82,7 +82,7 @@ namespace Systems.SimpleEntities.Data
         /// <typeparam name="TDamageAffinity">Object type to get </typeparam>
         /// <returns>First object of specified type or null if no object of specified type is found</returns>
         [CanBeNull] public static TDamageAffinity GetAffinity<TDamageAffinity>()
-            where TDamageAffinity : DamageAffinity
+            where TDamageAffinity : AffinityType
         {
             EnsureLoaded();
 
@@ -102,7 +102,7 @@ namespace Systems.SimpleEntities.Data
         /// <typeparam name="TDamageAffinity">Type of object to get</typeparam>
         /// <returns>Read-only list of objects of specified type</returns>
         [NotNull] public static IReadOnlyList<TDamageAffinity> GetAll<TDamageAffinity>()
-            where TDamageAffinity : DamageAffinity
+            where TDamageAffinity : AffinityType
         {
             EnsureLoaded();
 

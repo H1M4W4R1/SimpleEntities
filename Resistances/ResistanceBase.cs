@@ -18,6 +18,6 @@ namespace Systems.SimpleEntities.Resistances
         /// <returns>True if this resistance is valid for the given affinity type</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsValidFor<TAffinityType>()
-            where TAffinityType : DamageAffinity => this is IResistance<TAffinityType>;
+            where TAffinityType : AffinityType => this is IResistance<TAffinityType>;
     }
 }

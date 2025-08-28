@@ -4,7 +4,7 @@ using Systems.SimpleEntities.Affinity;
 namespace Systems.SimpleEntities.Resistances.Markers
 {
     public interface IResistance<[UsedImplicitly] TAffinityType>
-        where TAffinityType : DamageAffinity
+        where TAffinityType : AffinityType
     {
         
     }

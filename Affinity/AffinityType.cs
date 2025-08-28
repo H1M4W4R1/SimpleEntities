@@ -6,7 +6,7 @@ namespace Systems.SimpleEntities.Affinity
     /// <summary>
     ///     Type of damage, used to determine affinity
     /// </summary>
-    public abstract class DamageAffinity : ScriptableObject
+    public abstract class AffinityType : ScriptableObject
     {
         /// <summary>
         ///     Executed when entity takes damage

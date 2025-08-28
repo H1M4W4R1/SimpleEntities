@@ -60,7 +60,7 @@ namespace Systems.SimpleEntities.Components
         /// <typeparam name="TAffinityType">Type of the affinity</typeparam>
         /// <returns>Value of the resistance</returns>
         public float GetResistance<TAffinityType>()
-            where TAffinityType : DamageAffinity
+            where TAffinityType : AffinityType
         {
             float result = 0;
             
@@ -96,8 +96,8 @@ namespace Systems.SimpleEntities.Components
             CurrentHealth = Mathf.Clamp(CurrentHealth, 0, MaxHealth);
             OnHealReceived(context);
             
-            if(!ReferenceEquals(context.healingAffinity, null))
-                context.healingAffinity.OnHealingReceived(context);
+            if(!ReferenceEquals(context.healingAffinityType, null))
+                context.healingAffinityType.OnHealingReceived(context);
         }
 
         /// <summary>
@@ -109,7 +109,7 @@ namespace Systems.SimpleEntities.Components
         public void Damage<TDamageAffinity>(
             [CanBeNull] object source,
             int amount)
-            where TDamageAffinity : DamageAffinity
+            where TDamageAffinity : AffinityType
         {
             DamageContext context = DamageContext.Create<TDamageAffinity>(this, source, amount);
             Damage(context);
@@ -124,7 +124,7 @@ namespace Systems.SimpleEntities.Components
         public void Heal<THealingAffinity>(
             [CanBeNull] object source,
             int amount)
-            where THealingAffinity : DamageAffinity
+            where THealingAffinity : AffinityType
         {
             HealContext context = HealContext.Create<THealingAffinity>(this, source, amount);
             Heal(context);
@@ -143,8 +143,8 @@ namespace Systems.SimpleEntities.Components
             CurrentHealth -= context.amount;
             OnDamageReceived(context);
             
-            if(!ReferenceEquals(context.damageAffinity, null))
-                context.damageAffinity.OnDamageReceived(context);
+            if(!ReferenceEquals(context.affinityType, null))
+                context.affinityType.OnDamageReceived(context);
 
             // If health is zero or less, kill the entity
             if (CurrentHealth <= 0) Kill(context);
@@ -171,8 +171,8 @@ namespace Systems.SimpleEntities.Components
             // Perform death events
             OnDeath(context);
             
-            if(!ReferenceEquals(context.damageAffinity, null))
-                context.damageAffinity.OnDeath(context);
+            if(!ReferenceEquals(context.affinityType, null))
+                context.affinityType.OnDeath(context);
         }
 
         /// <summary>

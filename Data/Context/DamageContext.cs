@@ -24,7 +24,7 @@ namespace Systems.SimpleEntities.Data.Context
         /// <summary>
         ///     Damage affinity
         /// </summary>
-        [CanBeNull] public readonly DamageAffinity damageAffinity;
+        [CanBeNull] public readonly AffinityType affinityType;
 
         /// <summary>
         ///     Resistance value
@@ -39,7 +39,7 @@ namespace Systems.SimpleEntities.Data.Context
         public DamageContext(
             [NotNull] EntityBase target,
             [CanBeNull] object source,
-            [CanBeNull] DamageAffinity damageAffinity,
+            [CanBeNull] AffinityType affinityType,
             float resistanceValue,
             int amount)
         {
@@ -47,7 +47,7 @@ namespace Systems.SimpleEntities.Data.Context
             Assert.IsNotNull(target, "Target cannot be null");
             this.target = target;
             this.source = source;
-            this.damageAffinity = damageAffinity;
+            this.affinityType = affinityType;
             this.resistanceValue = resistanceValue;
             this.amount = (int) (amount * math.clamp(1 - resistanceValue, 0, 1));
         }
@@ -56,7 +56,7 @@ namespace Systems.SimpleEntities.Data.Context
             [NotNull] EntityBase target,
             [CanBeNull] object source,
             int amount)
-            where TDamageAffinity : DamageAffinity
+            where TDamageAffinity : AffinityType
         {
             Assert.IsNotNull(target, "Target cannot be null");
             Assert.IsTrue(amount >= 0, "Amount of damage must be greater than or equal to zero");
