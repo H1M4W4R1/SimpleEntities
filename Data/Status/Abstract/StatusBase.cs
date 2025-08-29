@@ -7,7 +7,7 @@ namespace Systems.SimpleEntities.Data.Status.Abstract
     /// <summary>
     ///     Represents a status effect that can be applied to entities
     /// </summary>
-    [AutoCreatedObject("Status", StatusDatabase.LABEL)]
+    [AutoCreate("Status", StatusDatabase.LABEL)]
     public abstract class StatusBase : ScriptableObject
     {
         /// <summary>

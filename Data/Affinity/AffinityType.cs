@@ -7,7 +7,7 @@ namespace Systems.SimpleEntities.Data.Affinity
     /// <summary>
     ///     Type of damage, used to determine affinity
     /// </summary>
-    [AutoCreatedObject("Affinities", AffinityDatabase.LABEL)]
+    [AutoCreate("Affinities", AffinityDatabase.LABEL)]
     public abstract class AffinityType : ScriptableObject
     {
         /// <summary>
