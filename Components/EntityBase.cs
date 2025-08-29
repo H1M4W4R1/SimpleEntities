@@ -310,6 +310,12 @@ namespace Systems.SimpleEntities.Components
         /// <returns>Result of the application</returns>
         public ApplyStatusResult ApplyStatus([NotNull] StatusBase status, int stackCount = 1)
         {
+            // Create status context
+            StatusContext checkContext = new(this, status, stackCount);
+            
+            // Check if status can be applied to the entity
+            if (!status.CanApply(checkContext)) return ApplyStatusResult.NotAllowed;
+            
             // Find status if already applied
             AppliedStatusData statusReference = default;
             int statusReferenceIndex = -1;
@@ -367,6 +373,9 @@ namespace Systems.SimpleEntities.Components
         /// <returns>Result of the removal</returns>
         public RemoveStatusResult RemoveStatus([NotNull] StatusBase status, int stackCount = 1, bool force = true)
         {
+            // Get status removal context
+            StatusContext checkContext = new StatusContext(this, status, stackCount);
+            
             // Find status if already applied
             AppliedStatusData statusReference = default;
             int statusReferenceIndex = -1;
@@ -382,6 +391,9 @@ namespace Systems.SimpleEntities.Components
             // If status is not applied, return invalid status
             if (ReferenceEquals(statusReference.status, null)) return RemoveStatusResult.NotApplied;
 
+            // Check if status can be removed
+            if (!status.CanRemove(checkContext)) return RemoveStatusResult.NotAllowed;
+            
             // If status is applied, check if it can be removed
             if (statusReference.stackCount - stackCount < 0 && !force) return RemoveStatusResult.NotEnoughStacks;
 

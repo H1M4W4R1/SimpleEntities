@@ -21,6 +21,16 @@ namespace Systems.SimpleEntities.Data.Status.Abstract
         [field: SerializeField] public int MaxStack { get; private set; }
         
         /// <summary>
+        ///     Checks if status can be applied to entity.
+        /// </summary>
+        protected internal virtual bool CanApply(in StatusContext context) => true;
+        
+        /// <summary>
+        ///     Checks if status can be removed from entity.
+        /// </summary>
+        protected internal virtual bool CanRemove(in StatusContext context) => true;
+        
+        /// <summary>
         ///     Executed when status is applied to entity for the first time
         /// </summary>
         protected internal virtual void OnStatusApplied(in StatusContext context){}
