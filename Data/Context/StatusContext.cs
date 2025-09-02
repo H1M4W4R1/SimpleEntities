@@ -12,7 +12,7 @@ namespace Systems.SimpleEntities.Data.Context
         /// <summary>
         ///     Entity that has the status
         /// </summary>
-        [NotNull] public readonly EntityBase entity;
+        [NotNull] public readonly AliveEntityBase entity;
         
         /// <summary>
         ///     Status that is applied to the entity
@@ -28,7 +28,7 @@ namespace Systems.SimpleEntities.Data.Context
         /// </remarks>
         public readonly int stackCountOrChange;
 
-        public StatusContext([NotNull] EntityBase entity, [NotNull] StatusBase status, int stackCountOrChange)
+        public StatusContext([NotNull] AliveEntityBase entity, [NotNull] StatusBase status, int stackCountOrChange)
         {
             this.entity = entity;
             this.status = status;

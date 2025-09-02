@@ -19,7 +19,7 @@ namespace Systems.SimpleEntities.Data.Context
         /// <summary>
         ///     Target of the healing
         /// </summary>
-        [NotNull] public readonly EntityBase target;
+        [NotNull] public readonly AliveEntityBase target;
 
         /// <summary>
         ///     Healing affinity
@@ -42,7 +42,7 @@ namespace Systems.SimpleEntities.Data.Context
         }
         
         public HealContext(
-            [NotNull] EntityBase target,
+            [NotNull] AliveEntityBase target,
             [CanBeNull] object source,
             [CanBeNull] AffinityType affinityType,
             float resistanceValue,
@@ -58,7 +58,7 @@ namespace Systems.SimpleEntities.Data.Context
         }
 
         public static HealContext Create<TDamageAffinity>(
-            [NotNull] EntityBase target,
+            [NotNull] AliveEntityBase target,
             [CanBeNull] object source,
             int amount)
             where TDamageAffinity : AffinityType, new()

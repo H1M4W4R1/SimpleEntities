@@ -7,7 +7,7 @@ namespace Systems.SimpleEntities.Examples.Entities
     /// <summary>
     ///     Example entity with fire and cold damage and resistance checks 
     /// </summary>
-    public abstract class ExampleEntityBase : EntityBase
+    public abstract class ExampleEntityBase : AliveEntityBase
     {
         [ContextMenu("Deal fire damage")] public void DealFireDamage()
         {

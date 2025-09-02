@@ -3,14 +3,14 @@ using UnityEngine;
 
 namespace Systems.SimpleEntities.Examples.Status
 {
-    [RequireComponent(typeof(EntityBase))]
+    [RequireComponent(typeof(AliveEntityBase))]
     public sealed class ExampleBurningStatusApplier : MonoBehaviour
     {
-        private EntityBase _entity;
+        private AliveEntityBase _entity;
 
         private void Awake()
         {
-            _entity = GetComponent<EntityBase>();
+            _entity = GetComponent<AliveEntityBase>();
         }
 
         [ContextMenu("Set on flame")] private void SetOnFlame()
