@@ -24,7 +24,7 @@ namespace Systems.SimpleEntities.Data.Context
         /// <summary>
         ///     Healing affinity
         /// </summary>
-        [CanBeNull] public readonly AffinityType healingAffinityType;
+        [CanBeNull] public readonly AffinityType affinityType;
 
         /// <summary>
         ///     Resistance value
@@ -38,13 +38,13 @@ namespace Systems.SimpleEntities.Data.Context
 
         public HealContext UpdateAmount(int newAmount)
         {
-            return new HealContext(target, source, healingAffinityType, resistanceValue, newAmount);
+            return new HealContext(target, source, affinityType, resistanceValue, newAmount);
         }
         
         public HealContext(
             [NotNull] EntityBase target,
             [CanBeNull] object source,
-            [CanBeNull] AffinityType healingAffinityType,
+            [CanBeNull] AffinityType affinityType,
             float resistanceValue,
             int amount)
         {
@@ -52,7 +52,7 @@ namespace Systems.SimpleEntities.Data.Context
             Assert.IsNotNull(target, "Target cannot be null");
             this.target = target;
             this.source = source;
-            this.healingAffinityType = healingAffinityType;
+            this.affinityType = affinityType;
             this.resistanceValue = resistanceValue;
             this.amount = (int) (amount * math.clamp(1 - resistanceValue, 0, 1));
         }

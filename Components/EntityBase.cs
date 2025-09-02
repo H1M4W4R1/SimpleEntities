@@ -26,8 +26,7 @@ namespace Systems.SimpleEntities.Components
     /// </remarks>
     public abstract class EntityBase : MonoBehaviour, IWithStatModifiers
     {
-        // TODO: Status events
-
+        
 #region Unity Lifecycle
 
         protected void Awake()
@@ -118,8 +117,6 @@ namespace Systems.SimpleEntities.Components
             // Add health and execute heal handlers
             CurrentHealth += healthToChange;
             OnHealReceived(contextCopy);
-            if (!ReferenceEquals(context.healingAffinityType, null))
-                context.healingAffinityType.OnHealingReceived(context);
         }
 
         /// <summary>
@@ -172,7 +169,6 @@ namespace Systems.SimpleEntities.Components
             // Subtract health and execute damage handlers
             CurrentHealth -= healthToChange;
             OnDamageReceived(contextCopy);
-            if (!ReferenceEquals(context.affinityType, null)) context.affinityType.OnDamageReceived(context);
 
             // If health is zero or less, kill the entity
             if (CurrentHealth <= 0) Kill(context);
@@ -187,7 +183,7 @@ namespace Systems.SimpleEntities.Components
             CurrentHealth = 0;
 
             // Check death save
-            DeathSaveContext deathSaveContext = CheckDeathSave(context);
+            DeathSaveContext deathSaveContext = CanSaveFromDeath(context);
 
             // If entity should be saved, set health to the value specified in death save context
             if (deathSaveContext.shouldBeSaved)
@@ -198,19 +194,23 @@ namespace Systems.SimpleEntities.Components
 
             // Perform death events
             OnDeath(context);
-            if (!ReferenceEquals(context.affinityType, null)) context.affinityType.OnDeath(context);
         }
 
         /// <summary>
         ///     Checks if entity can be damaged
         /// </summary>
-        protected virtual bool CanBeDamaged(in DamageContext context) => true;
+        protected virtual bool CanBeDamaged(in DamageContext context)
+        {
+            if (!ReferenceEquals(context.affinityType, null)) return context.affinityType.CanBeDamaged(context);
+            return true;
+        }
 
         /// <summary>
         ///     Called when damage is failed due to <see cref="CanBeDamaged"/>
         /// </summary>
         protected virtual void OnDamageFailed(in DamageContext context)
         {
+            if (!ReferenceEquals(context.affinityType, null)) context.affinityType.OnDamageFailed(context);
         }
 
         /// <summary>
@@ -218,18 +218,24 @@ namespace Systems.SimpleEntities.Components
         /// </summary>
         protected virtual void OnDamageReceived(in DamageContext context)
         {
+            if (!ReferenceEquals(context.affinityType, null)) context.affinityType.OnDamageReceived(context);
         }
 
         /// <summary>
         ///     Checks if entity can be healed
         /// </summary>
-        protected virtual bool CanBeHealed(in HealContext context) => true;
+        protected virtual bool CanBeHealed(in HealContext context)
+        {
+            if (!ReferenceEquals(context.affinityType, null)) return context.affinityType.CanBeHealed(context);
+            return true;
+        }
 
         /// <summary>
         ///     Called when healing is failed due to <see cref="CanBeHealed"/>
         /// </summary>
         protected virtual void OnHealFailed(in HealContext context)
         {
+            if (!ReferenceEquals(context.affinityType, null)) context.affinityType.OnHealingFailed(context);
         }
 
         /// <summary>
@@ -237,6 +243,7 @@ namespace Systems.SimpleEntities.Components
         /// </summary>
         protected virtual void OnHealReceived(in HealContext context)
         {
+            if (!ReferenceEquals(context.affinityType, null)) context.affinityType.OnHealingReceived(context);
         }
 
         /// <summary>
@@ -244,7 +251,11 @@ namespace Systems.SimpleEntities.Components
         /// </summary>
         /// <param name="context">Context of the damage event</param>
         /// <returns>True if entity should not be killed</returns>
-        protected virtual DeathSaveContext CheckDeathSave(in DamageContext context) => default;
+        protected virtual DeathSaveContext CanSaveFromDeath(in DamageContext context)
+        {
+            if (!ReferenceEquals(context.affinityType, null)) return context.affinityType.CanSaveFromDeath(context);
+            return new DeathSaveContext(false, 0);
+        }
 
         /// <summary>
         ///     Executes when entity dies
@@ -252,6 +263,7 @@ namespace Systems.SimpleEntities.Components
         /// <param name="context">Context of the damage event that killed the entity</param>
         protected virtual void OnDeath(in DamageContext context)
         {
+            if (!ReferenceEquals(context.affinityType, null)) context.affinityType.OnDeath(context);
         }
 
 #endregion
