@@ -3,6 +3,7 @@ using JetBrains.Annotations;
 using Systems.SimpleEntities.Data;
 using Systems.SimpleEntities.Data.Affinity;
 using Systems.SimpleEntities.Data.Context;
+using Systems.SimpleEntities.Data.Enums;
 using Systems.SimpleEntities.Data.Resistances;
 using Systems.SimpleEntities.Data.Status.Abstract;
 using Systems.SimpleEntities.Data.Status.Enums;
@@ -11,6 +12,7 @@ using Systems.SimpleStats.Abstract;
 using Systems.SimpleStats.Abstract.Modifiers;
 using Systems.SimpleStats.Data;
 using Systems.SimpleStats.Data.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Systems.SimpleEntities.Components
@@ -24,6 +26,8 @@ namespace Systems.SimpleEntities.Components
     /// </remarks>
     public abstract class EntityBase : MonoBehaviour, IWithStatModifiers
     {
+        // TODO: Status events
+
 #region Unity Lifecycle
 
         protected void Awake()
@@ -57,12 +61,12 @@ namespace Systems.SimpleEntities.Components
         /// <summary>
         ///     Current health of the entity
         /// </summary>
-        [field: SerializeField] public int CurrentHealth { get; protected set; }
+        [field: SerializeField] public virtual int CurrentHealth { get; protected set; }
 
         /// <summary>
         ///     Maximum health of the entity
         /// </summary>
-        [field: SerializeField] public int MaxHealth { get; protected set; }
+        [field: SerializeField] public virtual int MaxHealth { get; protected set; }
 
         /// <summary>
         ///     Gets resistance of the entity
@@ -99,13 +103,21 @@ namespace Systems.SimpleEntities.Components
         public void Heal(in HealContext context)
         {
             // Check if entity can be healed
-            if (!CanBeHealed(context)) return;
+            if (!CanBeHealed(context))
+            {
+                OnHealFailed(context);
+                return;
+            }
+
+            // Compute amount of health to change
+            // and update context with final amount
+            int missingHealth = MaxHealth - CurrentHealth;
+            int healthToChange = math.min(missingHealth, context.amount);
+            HealContext contextCopy = context.UpdateAmount(healthToChange);
 
             // Add health and execute heal handlers
-            CurrentHealth += context.amount;
-            CurrentHealth = Mathf.Clamp(CurrentHealth, 0, MaxHealth);
-            OnHealReceived(context);
-
+            CurrentHealth += healthToChange;
+            OnHealReceived(contextCopy);
             if (!ReferenceEquals(context.healingAffinityType, null))
                 context.healingAffinityType.OnHealingReceived(context);
         }
@@ -147,12 +159,19 @@ namespace Systems.SimpleEntities.Components
         public void Damage(in DamageContext context)
         {
             // Check if entity can be damaged
-            if (!CanBeDamaged(context)) return;
+            if (!CanBeDamaged(context))
+            {
+                OnDamageFailed(context);
+                return;
+            }
+
+            // Compute amount of health to change
+            int healthToChange = math.min(context.amount, CurrentHealth);
+            DamageContext contextCopy = context.UpdateAmount(healthToChange);
 
             // Subtract health and execute damage handlers
-            CurrentHealth -= context.amount;
-            OnDamageReceived(context);
-
+            CurrentHealth -= healthToChange;
+            OnDamageReceived(contextCopy);
             if (!ReferenceEquals(context.affinityType, null)) context.affinityType.OnDamageReceived(context);
 
             // If health is zero or less, kill the entity
@@ -179,39 +198,46 @@ namespace Systems.SimpleEntities.Components
 
             // Perform death events
             OnDeath(context);
-
             if (!ReferenceEquals(context.affinityType, null)) context.affinityType.OnDeath(context);
-        }
-
-        /// <summary>
-        ///     Executes when entity takes damage
-        /// </summary>
-        /// <param name="context">Context of the damage event</param>
-        protected virtual void OnDamageReceived(in DamageContext context)
-        {
         }
 
         /// <summary>
         ///     Checks if entity can be damaged
         /// </summary>
-        /// <param name="context">Context of the damage event</param>
-        /// <returns>True if entity can be damaged</returns>
         protected virtual bool CanBeDamaged(in DamageContext context) => true;
 
         /// <summary>
-        ///     Executes when entity takes healing
+        ///     Called when damage is failed due to <see cref="CanBeDamaged"/>
         /// </summary>
-        /// <param name="context">Context of the healing event</param>
-        protected virtual void OnHealReceived(in HealContext context)
+        protected virtual void OnDamageFailed(in DamageContext context)
+        {
+        }
+
+        /// <summary>
+        ///     Executes when entity takes damage
+        /// </summary>
+        protected virtual void OnDamageReceived(in DamageContext context)
         {
         }
 
         /// <summary>
         ///     Checks if entity can be healed
         /// </summary>
-        /// <param name="context">Context of the heal event</param>
-        /// <returns>True if entity can be healed</returns>
         protected virtual bool CanBeHealed(in HealContext context) => true;
+
+        /// <summary>
+        ///     Called when healing is failed due to <see cref="CanBeHealed"/>
+        /// </summary>
+        protected virtual void OnHealFailed(in HealContext context)
+        {
+        }
+
+        /// <summary>
+        ///     Executes when entity takes healing
+        /// </summary>
+        protected virtual void OnHealReceived(in HealContext context)
+        {
+        }
 
         /// <summary>
         ///     Checks if entity should be protected from death
@@ -290,15 +316,23 @@ namespace Systems.SimpleEntities.Components
         /// </summary>
         /// <param name="status">Status to apply</param>
         /// <param name="stackCount">Stack count to apply</param>
+        /// <param name="flags">Flags to modify the application</param>
         /// <returns>Result of the application</returns>
-        public ApplyStatusResult ApplyStatus([NotNull] StatusBase status, int stackCount = 1)
+        public ApplyStatusResult ApplyStatus(
+            [NotNull] StatusBase status,
+            int stackCount = 1,
+            StatusModificationFlags flags = StatusModificationFlags.None)
         {
             // Create status context
             StatusContext checkContext = new(this, status, stackCount);
-            
+
             // Check if status can be applied to the entity
-            if (!status.CanApply(checkContext)) return ApplyStatusResult.NotAllowed;
-            
+            if (!CanApplyStatus(checkContext) && (flags & StatusModificationFlags.IgnoreConditions) == 0)
+            {
+                OnStatusApplicationFailed(checkContext);
+                return ApplyStatusResult.NotAllowed;
+            }
+
             // Find status if already applied
             AppliedStatusData statusReference = default;
             int statusReferenceIndex = -1;
@@ -316,18 +350,22 @@ namespace Systems.SimpleEntities.Components
                 StatusContext addStatusContext = new(this, status, stackCount);
                 statusReference = new AppliedStatusData(status, stackCount);
                 appliedStatuses.Add(statusReference);
-                statusReference.status.OnStatusApplied(addStatusContext);
+                OnStatusApplied(addStatusContext);
                 return ApplyStatusResult.Success;
             }
 
             // If status is already applied, check if it can be stacked (or if max stack is reached)
-            if (statusReference.stackCount + stackCount > status.MaxStack && status.MaxStack > 0)
+            if (statusReference.stackCount >= status.MaxStack && status.MaxStack > 0 &&
+                (flags & StatusModificationFlags.IgnoreStackLimit) == 0)
+            {
+                OnStatusApplicationFailed(checkContext);
                 return ApplyStatusResult.MaxStackReached;
+            }
 
             // If status can be stacked, stack it
             StatusContext modifyStatusContext = new(this, status, stackCount);
             statusReference.stackCount += stackCount;
-            statusReference.status.OnStatusStackChanged(modifyStatusContext);
+            OnStatusStackChanged(modifyStatusContext);
             appliedStatuses[statusReferenceIndex] = statusReference;
             return ApplyStatusResult.Success;
         }
@@ -352,13 +390,16 @@ namespace Systems.SimpleEntities.Components
         /// </summary>
         /// <param name="status">Status to remove</param>
         /// <param name="stackCount">Stack count to remove</param>
-        /// <param name="force">If true, will remove status even if it has not enough stacks</param>
+        /// <param name="flags">Flags to modify the removal</param>
         /// <returns>Result of the removal</returns>
-        public RemoveStatusResult RemoveStatus([NotNull] StatusBase status, int stackCount = 1, bool force = true)
+        public RemoveStatusResult RemoveStatus(
+            [NotNull] StatusBase status,
+            int stackCount = 1,
+            StatusModificationFlags flags = StatusModificationFlags.None)
         {
             // Get status removal context
             StatusContext checkContext = new StatusContext(this, status, stackCount);
-            
+
             // Find status if already applied
             AppliedStatusData statusReference = default;
             int statusReferenceIndex = -1;
@@ -372,13 +413,26 @@ namespace Systems.SimpleEntities.Components
             }
 
             // If status is not applied, return invalid status
-            if (ReferenceEquals(statusReference.status, null)) return RemoveStatusResult.NotApplied;
+            if (ReferenceEquals(statusReference.status, null))
+            {
+                OnStatusRemovalFailed(checkContext);
+                return RemoveStatusResult.NotApplied;
+            }
 
             // Check if status can be removed
-            if (!status.CanRemove(checkContext)) return RemoveStatusResult.NotAllowed;
-            
+            if (!CanRemoveStatus(checkContext) && (flags & StatusModificationFlags.IgnoreConditions) == 0)
+            {
+                OnStatusRemovalFailed(checkContext);
+                return RemoveStatusResult.NotAllowed;
+            }
+
             // If status is applied, check if it can be removed
-            if (statusReference.stackCount - stackCount < 0 && !force) return RemoveStatusResult.NotEnoughStacks;
+            if (statusReference.stackCount - stackCount < 0 &&
+                (flags & StatusModificationFlags.IgnoreStackLimit) == 0)
+            {
+                OnStatusRemovalFailed(checkContext);
+                return RemoveStatusResult.NotEnoughStacks;
+            }
 
             // Remove stacks
             statusReference.stackCount -= stackCount;
@@ -387,7 +441,7 @@ namespace Systems.SimpleEntities.Components
             if (statusReference.stackCount == 0 && statusReferenceIndex != -1)
             {
                 StatusContext removeStatusContext = new(this, status, statusReference.stackCount);
-                statusReference.status.OnStatusRemoved(removeStatusContext);
+                OnStatusRemoved(removeStatusContext);
 
                 // Remove status from list
                 appliedStatuses.RemoveAt(statusReferenceIndex);
@@ -395,7 +449,7 @@ namespace Systems.SimpleEntities.Components
             else // If not, then handle stack reduction
             {
                 StatusContext reduceStackContext = new(this, status, -stackCount);
-                statusReference.status.OnStatusStackChanged(reduceStackContext);
+                OnStatusStackChanged(reduceStackContext);
 
                 // Update applied statuses
                 appliedStatuses[statusReferenceIndex] = statusReference;
@@ -466,6 +520,46 @@ namespace Systems.SimpleEntities.Components
                 appliedStatuses[i].status.OnStatusTick(tickContext, deltaTime);
             }
         }
+
+        /// <summary>
+        ///     Check if status can be applied to the entity
+        /// </summary>
+        protected virtual bool CanApplyStatus(in StatusContext context) => true;
+
+        /// <summary>
+        ///     Checks if status can be removed from the entity
+        /// </summary>
+        protected virtual bool CanRemoveStatus(in StatusContext context) => true;
+
+        /// <summary>
+        ///     Executes when status is applied to the entity
+        /// </summary>
+        protected virtual void OnStatusApplied(in StatusContext context) =>
+            context.status.OnStatusApplied(context);
+
+        /// <summary>
+        ///     Executes when status application fails
+        /// </summary>
+        protected virtual void OnStatusApplicationFailed(in StatusContext context) =>
+            context.status.OnStatusApplicationFailed(context);
+
+        /// <summary>
+        ///     Executes when status is removed from the entity
+        /// </summary>
+        protected virtual void OnStatusRemoved(in StatusContext context) =>
+            context.status.OnStatusRemoved(context);
+
+        /// <summary>
+        ///     Executes when status removal fails
+        /// </summary>
+        protected virtual void OnStatusRemovalFailed(in StatusContext context) =>
+            context.status.OnStatusRemovalFailed(context);
+
+        /// <summary>
+        ///     Executes when status stack count changes
+        /// </summary>
+        protected virtual void OnStatusStackChanged(in StatusContext context) =>
+            context.status.OnStatusStackChanged(context);
 
 #endregion
     }

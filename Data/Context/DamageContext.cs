@@ -36,6 +36,11 @@ namespace Systems.SimpleEntities.Data.Context
         /// </summary>
         public readonly int amount;
         
+        public DamageContext UpdateAmount(int healthToChange)
+        {
+            return new DamageContext(target, source, affinityType, resistanceValue, healthToChange);
+        }
+        
         public DamageContext(
             [NotNull] EntityBase target,
             [CanBeNull] object source,
@@ -64,5 +69,7 @@ namespace Systems.SimpleEntities.Data.Context
             float resistanceValue = target.GetResistance<TDamageAffinity>();
             return new DamageContext(target, source, AffinityDatabase.GetExact<TDamageAffinity>(), resistanceValue, amount);
         }
+
+     
     }
 }

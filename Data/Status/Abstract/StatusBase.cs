@@ -26,9 +26,9 @@ namespace Systems.SimpleEntities.Data.Status.Abstract
         protected internal virtual bool CanApply(in StatusContext context) => true;
         
         /// <summary>
-        ///     Checks if status can be removed from entity.
+        ///     Executed when status application is failed due to <see cref="CanApply"/> or related reasons
         /// </summary>
-        protected internal virtual bool CanRemove(in StatusContext context) => true;
+        protected internal virtual void OnStatusApplicationFailed(in StatusContext context){}
         
         /// <summary>
         ///     Executed when status is applied to entity for the first time
@@ -36,12 +36,22 @@ namespace Systems.SimpleEntities.Data.Status.Abstract
         protected internal virtual void OnStatusApplied(in StatusContext context){}
         
         /// <summary>
+        ///     Checks if status can be removed from entity.
+        /// </summary>
+        protected internal virtual bool CanRemove(in StatusContext context) => true;
+        
+        /// <summary>
+        ///     Executed when status removal is failed due to <see cref="CanRemove"/> or related reasons
+        /// </summary>
+        protected internal virtual void OnStatusRemovalFailed(in StatusContext context){}
+        
+        /// <summary>
         ///     Executed when status is removed from entity (stack reached 0)
         /// </summary>
         protected internal virtual void OnStatusRemoved(in StatusContext context){}
         
         /// <summary>
-        ///     Called when status is already applied and stack count changes     
+        ///     Called when status stack is changed
         /// </summary>
         protected internal virtual void OnStatusStackChanged(in StatusContext context){}
         

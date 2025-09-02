@@ -36,6 +36,11 @@ namespace Systems.SimpleEntities.Data.Context
         /// </summary>
         public readonly int amount;
 
+        public HealContext UpdateAmount(int newAmount)
+        {
+            return new HealContext(target, source, healingAffinityType, resistanceValue, newAmount);
+        }
+        
         public HealContext(
             [NotNull] EntityBase target,
             [CanBeNull] object source,
