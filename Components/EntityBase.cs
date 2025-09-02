@@ -26,7 +26,6 @@ namespace Systems.SimpleEntities.Components
     /// </remarks>
     public abstract class EntityBase : MonoBehaviour, IWithStatModifiers
     {
-        
 #region Unity Lifecycle
 
         protected void Awake()
@@ -196,12 +195,22 @@ namespace Systems.SimpleEntities.Components
             OnDeath(context);
         }
 
+
         /// <summary>
         ///     Checks if entity can be damaged
         /// </summary>
-        protected virtual bool CanBeDamaged(in DamageContext context)
+        public virtual bool CanBeDamaged(in DamageContext context)
         {
             if (!ReferenceEquals(context.affinityType, null)) return context.affinityType.CanBeDamaged(context);
+            return true;
+        }
+
+        /// <summary>
+        ///     Checks if entity can be healed
+        /// </summary>
+        public virtual bool CanBeHealed(in HealContext context)
+        {
+            if (!ReferenceEquals(context.affinityType, null)) return context.affinityType.CanBeHealed(context);
             return true;
         }
 
@@ -221,14 +230,6 @@ namespace Systems.SimpleEntities.Components
             if (!ReferenceEquals(context.affinityType, null)) context.affinityType.OnDamageReceived(context);
         }
 
-        /// <summary>
-        ///     Checks if entity can be healed
-        /// </summary>
-        protected virtual bool CanBeHealed(in HealContext context)
-        {
-            if (!ReferenceEquals(context.affinityType, null)) return context.affinityType.CanBeHealed(context);
-            return true;
-        }
 
         /// <summary>
         ///     Called when healing is failed due to <see cref="CanBeHealed"/>
@@ -253,7 +254,8 @@ namespace Systems.SimpleEntities.Components
         /// <returns>True if entity should not be killed</returns>
         protected virtual DeathSaveContext CanSaveFromDeath(in DamageContext context)
         {
-            if (!ReferenceEquals(context.affinityType, null)) return context.affinityType.CanSaveFromDeath(context);
+            if (!ReferenceEquals(context.affinityType, null))
+                return context.affinityType.CanSaveFromDeath(context);
             return new DeathSaveContext(false, 0);
         }
 
@@ -536,12 +538,12 @@ namespace Systems.SimpleEntities.Components
         /// <summary>
         ///     Check if status can be applied to the entity
         /// </summary>
-        protected virtual bool CanApplyStatus(in StatusContext context) => true;
+        public virtual bool CanApplyStatus(in StatusContext context) => true;
 
         /// <summary>
         ///     Checks if status can be removed from the entity
         /// </summary>
-        protected virtual bool CanRemoveStatus(in StatusContext context) => true;
+        public virtual bool CanRemoveStatus(in StatusContext context) => true;
 
         /// <summary>
         ///     Executes when status is applied to the entity

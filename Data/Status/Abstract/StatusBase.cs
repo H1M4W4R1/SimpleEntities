@@ -7,8 +7,7 @@ namespace Systems.SimpleEntities.Data.Status.Abstract
     /// <summary>
     ///     Represents a status effect that can be applied to entities
     /// </summary>
-    [AutoCreate("Status", StatusDatabase.LABEL)]
-    public abstract class StatusBase : ScriptableObject
+    [AutoCreate("Status", StatusDatabase.LABEL)] public abstract class StatusBase : ScriptableObject
     {
         /// <summary>
         ///     Max stack of status effect
@@ -19,45 +18,59 @@ namespace Systems.SimpleEntities.Data.Status.Abstract
         ///     precision you need.
         /// </remarks>
         [field: SerializeField] public int MaxStack { get; private set; }
-        
+
         /// <summary>
         ///     Checks if status can be applied to entity.
         /// </summary>
-        protected internal virtual bool CanApply(in StatusContext context) => true;
-        
-        /// <summary>
-        ///     Executed when status application is failed due to <see cref="CanApply"/> or related reasons
-        /// </summary>
-        protected internal virtual void OnStatusApplicationFailed(in StatusContext context){}
-        
-        /// <summary>
-        ///     Executed when status is applied to entity for the first time
-        /// </summary>
-        protected internal virtual void OnStatusApplied(in StatusContext context){}
-        
+        public virtual bool CanApply(in StatusContext context) => true;
+
         /// <summary>
         ///     Checks if status can be removed from entity.
         /// </summary>
-        protected internal virtual bool CanRemove(in StatusContext context) => true;
-        
+        public virtual bool CanRemove(in StatusContext context) => true;
+
+
+        /// <summary>
+        ///     Executed when status application is failed due to <see cref="CanApply"/> or related reasons
+        /// </summary>
+        protected internal virtual void OnStatusApplicationFailed(in StatusContext context)
+        {
+        }
+
+        /// <summary>
+        ///     Executed when status is applied to entity for the first time
+        /// </summary>
+        protected internal virtual void OnStatusApplied(in StatusContext context)
+        {
+        }
+
+
         /// <summary>
         ///     Executed when status removal is failed due to <see cref="CanRemove"/> or related reasons
         /// </summary>
-        protected internal virtual void OnStatusRemovalFailed(in StatusContext context){}
-        
+        protected internal virtual void OnStatusRemovalFailed(in StatusContext context)
+        {
+        }
+
         /// <summary>
         ///     Executed when status is removed from entity (stack reached 0)
         /// </summary>
-        protected internal virtual void OnStatusRemoved(in StatusContext context){}
-        
+        protected internal virtual void OnStatusRemoved(in StatusContext context)
+        {
+        }
+
         /// <summary>
         ///     Called when status stack is changed
         /// </summary>
-        protected internal virtual void OnStatusStackChanged(in StatusContext context){}
-        
+        protected internal virtual void OnStatusStackChanged(in StatusContext context)
+        {
+        }
+
         /// <summary>
         ///     Called every tick while status is active
         /// </summary>
-        protected internal virtual void OnStatusTick(in StatusContext context, float deltaTime){}
+        protected internal virtual void OnStatusTick(in StatusContext context, float deltaTime)
+        {
+        }
     }
 }
