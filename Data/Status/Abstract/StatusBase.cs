@@ -1,5 +1,7 @@
 ﻿using Systems.SimpleCore.Automation.Attributes;
+using Systems.SimpleCore.Operations;
 using Systems.SimpleEntities.Data.Context;
+using Systems.SimpleEntities.Operations;
 using UnityEngine;
 
 namespace Systems.SimpleEntities.Data.Status.Abstract
@@ -22,25 +24,29 @@ namespace Systems.SimpleEntities.Data.Status.Abstract
         /// <summary>
         ///     Checks if status can be applied to entity.
         /// </summary>
-        public virtual bool CanApply(in StatusContext context) => true;
+        public virtual OperationResult CanApply(in StatusContext context) => EntityOperations.Permitted();
 
         /// <summary>
         ///     Checks if status can be removed from entity.
         /// </summary>
-        public virtual bool CanRemove(in StatusContext context) => true;
+        public virtual OperationResult CanRemove(in StatusContext context) => EntityOperations.Permitted();
 
 
         /// <summary>
         ///     Executed when status application is failed due to <see cref="CanApply"/> or related reasons
         /// </summary>
-        protected internal virtual void OnStatusApplicationFailed(in StatusContext context)
+        protected internal virtual void OnStatusApplicationFailed(
+            in StatusContext context,
+            in OperationResult<int> resultExpectedStacks)
         {
         }
 
         /// <summary>
         ///     Executed when status is applied to entity for the first time
         /// </summary>
-        protected internal virtual void OnStatusApplied(in StatusContext context)
+        protected internal virtual void OnStatusApplied(
+            in StatusContext context,
+            in OperationResult<int> resultStackCount)
         {
         }
 
@@ -48,21 +54,27 @@ namespace Systems.SimpleEntities.Data.Status.Abstract
         /// <summary>
         ///     Executed when status removal is failed due to <see cref="CanRemove"/> or related reasons
         /// </summary>
-        protected internal virtual void OnStatusRemovalFailed(in StatusContext context)
+        protected internal virtual void OnStatusRemovalFailed(
+            in StatusContext context,
+            in OperationResult<int> resultExpectedStacks)
         {
         }
 
         /// <summary>
         ///     Executed when status is removed from entity (stack reached 0)
         /// </summary>
-        protected internal virtual void OnStatusRemoved(in StatusContext context)
+        protected internal virtual void OnStatusRemoved(
+            in StatusContext context,
+            in OperationResult<int> resultStackCount)
         {
         }
 
         /// <summary>
         ///     Called when status stack is changed
         /// </summary>
-        protected internal virtual void OnStatusStackChanged(in StatusContext context)
+        protected internal virtual void OnStatusStackChanged(
+            in StatusContext context,
+            in OperationResult<int> resultStackCount)
         {
         }
 

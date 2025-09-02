@@ -8,7 +8,6 @@ using Systems.SimpleEntities.Data.Context;
 using Systems.SimpleEntities.Data.Enums;
 using Systems.SimpleEntities.Data.Resistances;
 using Systems.SimpleEntities.Data.Status.Abstract;
-using Systems.SimpleEntities.Data.Status.Enums;
 using Systems.SimpleEntities.Data.Status.Storage;
 using Systems.SimpleEntities.Operations;
 using Systems.SimpleStats.Abstract;
@@ -17,6 +16,7 @@ using Systems.SimpleStats.Data;
 using Systems.SimpleStats.Data.Collections;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace Systems.SimpleEntities.Components
 {
@@ -264,7 +264,9 @@ namespace Systems.SimpleEntities.Components
         /// <summary>
         ///     Called when damage is failed due to <see cref="CanBeDamaged"/>
         /// </summary>
-        protected virtual void OnDamageFailed(in DamageContext context, in OperationResult<long> resultHealthToTake)
+        protected virtual void OnDamageFailed(
+            in DamageContext context,
+            in OperationResult<long> resultHealthToTake)
         {
             if (!ReferenceEquals(context.affinityType, null))
                 context.affinityType.OnDamageFailed(context, resultHealthToTake);
@@ -273,7 +275,9 @@ namespace Systems.SimpleEntities.Components
         /// <summary>
         ///     Executes when entity takes damage
         /// </summary>
-        protected virtual void OnDamageReceived(in DamageContext context, in OperationResult<long> resultHealthLost)
+        protected virtual void OnDamageReceived(
+            in DamageContext context,
+            in OperationResult<long> resultHealthLost)
         {
             if (!ReferenceEquals(context.affinityType, null))
                 context.affinityType.OnDamageReceived(context, resultHealthLost);
@@ -325,7 +329,8 @@ namespace Systems.SimpleEntities.Components
         /// </summary>
         protected virtual void OnDeath(in DamageContext context, in OperationResult<long> resultHealthLost)
         {
-            if (!ReferenceEquals(context.affinityType, null)) context.affinityType.OnDeath(context, resultHealthLost);
+            if (!ReferenceEquals(context.affinityType, null))
+                context.affinityType.OnDeath(context, resultHealthLost);
         }
 
 #endregion
@@ -375,14 +380,19 @@ namespace Systems.SimpleEntities.Components
         ///     Applies a status to the entity
         /// </summary>
         /// <param name="stackCount">Stack count to apply</param>
+        /// <param name="flags">Flags to modify the application</param>
+        /// <param name="actionSource">Source of the action</param>
         /// <typeparam name="TStatusType">Type of the status to apply</typeparam>
-        /// <returns>Result of the application</returns>
-        public ApplyStatusResult ApplyStatus<TStatusType>(int stackCount = 1)
+        /// <returns>Result of the application with new stack count</returns>
+        public OperationResult<int> ApplyStatus<TStatusType>(
+            int stackCount = 1,
+            StatusModificationFlags flags = StatusModificationFlags.None,
+            ActionSource actionSource = ActionSource.External)
             where TStatusType : StatusBase, new()
         {
             TStatusType status = StatusDatabase.GetExact<TStatusType>();
-            if (ReferenceEquals(status, null)) return ApplyStatusResult.InvalidStatus;
-            return ApplyStatus(status, stackCount);
+            Assert.IsFalse(ReferenceEquals(status, null), "Status not found in database");
+            return ApplyStatus(status, stackCount, flags, actionSource);
         }
 
         /// <summary>
@@ -391,21 +401,16 @@ namespace Systems.SimpleEntities.Components
         /// <param name="status">Status to apply</param>
         /// <param name="stackCount">Stack count to apply</param>
         /// <param name="flags">Flags to modify the application</param>
-        /// <returns>Result of the application</returns>
-        public ApplyStatusResult ApplyStatus(
+        /// <param name="actionSource">Source of the action</param>
+        /// <returns>Result of the application with new stack count</returns>
+        public OperationResult<int> ApplyStatus(
             [NotNull] StatusBase status,
             int stackCount = 1,
-            StatusModificationFlags flags = StatusModificationFlags.None)
+            StatusModificationFlags flags = StatusModificationFlags.None,
+            ActionSource actionSource = ActionSource.External)
         {
             // Create status context
             StatusContext checkContext = new(this, status, stackCount);
-
-            // Check if status can be applied to the entity
-            if (!CanApplyStatus(checkContext) && (flags & StatusModificationFlags.IgnoreConditions) == 0)
-            {
-                OnStatusApplicationFailed(checkContext);
-                return ApplyStatusResult.NotAllowed;
-            }
 
             // Find status if already applied
             AppliedStatusData statusReference = default;
@@ -418,22 +423,42 @@ namespace Systems.SimpleEntities.Components
                 break;
             }
 
+            // Check if status can be applied to the entity
+            OperationResult canApplyStatus = CanApplyStatus(checkContext);
+            if (!canApplyStatus && (flags & StatusModificationFlags.IgnoreConditions) == 0)
+            {
+                if (actionSource == ActionSource.Internal)
+                    return canApplyStatus.WithData(statusReference.stackCount);
+                OnStatusApplicationFailed(checkContext, canApplyStatus.WithData(stackCount));
+                return canApplyStatus.WithData(statusReference.stackCount);
+            }
+
             // If status is not applied, apply it
             if (ReferenceEquals(statusReference.status, null))
             {
+                stackCount = math.min(stackCount, status.MaxStack);
+
                 StatusContext addStatusContext = new(this, status, stackCount);
                 statusReference = new AppliedStatusData(status, stackCount);
                 _appliedStatuses.Add(statusReference);
-                OnStatusApplied(addStatusContext);
-                return ApplyStatusResult.Success;
+                OperationResult<int> opResult = StatusOperations.StatusApplied().WithData(stackCount);
+
+                if (actionSource == ActionSource.Internal) return opResult;
+                OnStatusApplied(addStatusContext, opResult);
+                return opResult;
             }
 
             // If status is already applied, check if it can be stacked (or if max stack is reached)
             if (statusReference.stackCount >= status.MaxStack && status.MaxStack > 0 &&
                 (flags & StatusModificationFlags.IgnoreStackLimit) == 0)
             {
-                OnStatusApplicationFailed(checkContext);
-                return ApplyStatusResult.MaxStackReached;
+                OperationResult<int> opResult =
+                    StatusOperations.MaxStackReached().WithData(statusReference.stackCount);
+
+                if (actionSource == ActionSource.Internal) return opResult;
+                OnStatusApplicationFailed(checkContext, 
+                    StatusOperations.MaxStackReached().WithData(stackCount));
+                return opResult;
             }
 
             // If status can be stacked, stack it
@@ -441,26 +466,34 @@ namespace Systems.SimpleEntities.Components
             int stackChange = math.min(stackCount, status.MaxStack - statusReference.stackCount);
             StatusContext modifyStatusContext = new(this, status, stackChange);
             statusReference.stackCount += stackChange;
-            OnStatusStackChanged(modifyStatusContext);
-
-            // Refresh applied status reference as it's accessed as struct
             _appliedStatuses[statusReferenceIndex] = statusReference;
-            return ApplyStatusResult.Success;
+
+            // Create operation result
+            OperationResult<int> opResult1 = StatusOperations.StatusStackChanged().WithData(statusReference.stackCount);
+
+            // Call event
+            if (actionSource == ActionSource.Internal) return opResult1;
+            OnStatusStackChanged(modifyStatusContext, opResult1);
+            return opResult1;
         }
 
         /// <summary>
         ///     Removes a status from the entity
         /// </summary>
         /// <param name="stackCount">Stack count to remove</param>
-        /// <param name="force">If true, will remove status even if it has not enough stacks</param>
+        /// <param name="flags">Flags to modify the removal</param>
+        /// <param name="actionSource">Source of the removal</param>
         /// <typeparam name="TStatusType">Type of the status to remove</typeparam>
-        /// <returns>Result of the removal</returns>
-        public RemoveStatusResult RemoveStatus<TStatusType>(int stackCount = 1, bool force = true)
+        /// <returns>Result of the removal with new stack count</returns>
+        public OperationResult<int> RemoveStatus<TStatusType>(
+            int stackCount = 1,
+            StatusModificationFlags flags = StatusModificationFlags.None,
+            ActionSource actionSource = ActionSource.External)
             where TStatusType : StatusBase, new()
         {
             TStatusType status = StatusDatabase.GetExact<TStatusType>();
-            if (ReferenceEquals(status, null)) return RemoveStatusResult.InvalidStatus;
-            return RemoveStatus(status);
+            Assert.IsFalse(ReferenceEquals(status, null), "Status not found in database");
+            return RemoveStatus(status, stackCount, flags, actionSource);
         }
 
         /// <summary>
@@ -469,14 +502,16 @@ namespace Systems.SimpleEntities.Components
         /// <param name="status">Status to remove</param>
         /// <param name="stackCount">Stack count to remove</param>
         /// <param name="flags">Flags to modify the removal</param>
+        /// <param name="actionSource">Source of the removal</param>
         /// <returns>Result of the removal</returns>
-        public RemoveStatusResult RemoveStatus(
+        public OperationResult<int> RemoveStatus(
             [NotNull] StatusBase status,
             int stackCount = 1,
-            StatusModificationFlags flags = StatusModificationFlags.None)
+            StatusModificationFlags flags = StatusModificationFlags.None,
+            ActionSource actionSource = ActionSource.External)
         {
             // Get status removal context
-            StatusContext checkContext = new StatusContext(this, status, stackCount);
+            StatusContext checkContext = new(this, status, stackCount);
 
             // Find status if already applied
             AppliedStatusData statusReference = default;
@@ -493,23 +528,33 @@ namespace Systems.SimpleEntities.Components
             // If status is not applied, return invalid status
             if (ReferenceEquals(statusReference.status, null))
             {
-                OnStatusRemovalFailed(checkContext);
-                return RemoveStatusResult.NotApplied;
+                OperationResult<int> opResult = StatusOperations.NotApplied().WithData(statusReference.stackCount);
+                
+                if (actionSource == ActionSource.Internal) return opResult;
+                OnStatusRemovalFailed(checkContext, StatusOperations.NotApplied().WithData(stackCount));
+                return opResult;
             }
 
             // Check if status can be removed
-            if (!CanRemoveStatus(checkContext) && (flags & StatusModificationFlags.IgnoreConditions) == 0)
+            OperationResult canRemoveStatus = status.CanRemove(checkContext);
+            if (!canRemoveStatus && (flags & StatusModificationFlags.IgnoreConditions) == 0)
             {
-                OnStatusRemovalFailed(checkContext);
-                return RemoveStatusResult.NotAllowed;
+                if (actionSource == ActionSource.Internal)
+                    return canRemoveStatus.WithData(statusReference.stackCount);
+                OnStatusRemovalFailed(checkContext, canRemoveStatus.WithData(stackCount));
+                return canRemoveStatus.WithData(statusReference.stackCount);
             }
 
             // If status is applied, check if it can be removed
             if (statusReference.stackCount - stackCount < 0 &&
                 (flags & StatusModificationFlags.IgnoreStackLimit) == 0)
             {
-                OnStatusRemovalFailed(checkContext);
-                return RemoveStatusResult.NotEnoughStacks;
+                OperationResult<int> opResult =
+                    StatusOperations.NotEnoughStacks().WithData(statusReference.stackCount);
+                
+                if (actionSource == ActionSource.Internal) return opResult;
+                OnStatusRemovalFailed(checkContext, StatusOperations.NotEnoughStacks().WithData(stackCount));
+                return opResult;
             }
 
             // Remove stacks or clear status to zero if stack are overflown
@@ -520,21 +565,30 @@ namespace Systems.SimpleEntities.Components
             if (statusReference.stackCount == 0 && statusReferenceIndex != -1)
             {
                 StatusContext removeStatusContext = new(this, status, 0);
-                OnStatusRemoved(removeStatusContext);
 
                 // Remove status from list
                 _appliedStatuses.RemoveAt(statusReferenceIndex);
+
+                OperationResult<int> opResult = StatusOperations.StatusRemoved().WithData(0);
+                
+                if (actionSource == ActionSource.Internal) return opResult;
+                OnStatusRemoved(removeStatusContext, opResult);
+                return opResult;
             }
             else // If not, then handle stack reduction
             {
                 StatusContext reduceStackContext = new(this, status, -stackChange);
-                OnStatusStackChanged(reduceStackContext);
 
                 // Update applied statuses
                 _appliedStatuses[statusReferenceIndex] = statusReference;
-            }
 
-            return RemoveStatusResult.Success;
+                OperationResult<int> opResult =
+                    StatusOperations.StatusStackChanged().WithData(statusReference.stackCount);
+                
+                if (actionSource == ActionSource.Internal) return opResult;
+                OnStatusStackChanged(reduceStackContext, opResult);
+                return opResult;
+            }
         }
 
         /// <summary>
@@ -603,42 +657,54 @@ namespace Systems.SimpleEntities.Components
         /// <summary>
         ///     Check if status can be applied to the entity
         /// </summary>
-        public virtual bool CanApplyStatus(in StatusContext context) => true;
+        public virtual OperationResult CanApplyStatus(in StatusContext context) =>
+            context.status.CanApply(context);
 
         /// <summary>
         ///     Checks if status can be removed from the entity
         /// </summary>
-        public virtual bool CanRemoveStatus(in StatusContext context) => true;
+        public virtual OperationResult CanRemoveStatus(in StatusContext context) =>
+            context.status.CanRemove(context);
 
         /// <summary>
         ///     Executes when status is applied to the entity
         /// </summary>
-        protected virtual void OnStatusApplied(in StatusContext context) =>
-            context.status.OnStatusApplied(context);
+        protected virtual void OnStatusApplied(
+            in StatusContext context,
+            in OperationResult<int> resultStackCount) =>
+            context.status.OnStatusApplied(context, resultStackCount);
 
         /// <summary>
         ///     Executes when status application fails
         /// </summary>
-        protected virtual void OnStatusApplicationFailed(in StatusContext context) =>
-            context.status.OnStatusApplicationFailed(context);
+        protected virtual void OnStatusApplicationFailed(
+            in StatusContext context,
+            in OperationResult<int> resultExpectedStacks) =>
+            context.status.OnStatusApplicationFailed(context, resultExpectedStacks);
 
         /// <summary>
         ///     Executes when status is removed from the entity
         /// </summary>
-        protected virtual void OnStatusRemoved(in StatusContext context) =>
-            context.status.OnStatusRemoved(context);
+        protected virtual void OnStatusRemoved(
+            in StatusContext context,
+            in OperationResult<int> resultStackCount) =>
+            context.status.OnStatusRemoved(context, resultStackCount);
 
         /// <summary>
         ///     Executes when status removal fails
         /// </summary>
-        protected virtual void OnStatusRemovalFailed(in StatusContext context) =>
-            context.status.OnStatusRemovalFailed(context);
+        protected virtual void OnStatusRemovalFailed(
+            in StatusContext context,
+            in OperationResult<int> resultExpectedStacks) =>
+            context.status.OnStatusRemovalFailed(context, resultExpectedStacks);
 
         /// <summary>
         ///     Executes when status stack count changes
         /// </summary>
-        protected virtual void OnStatusStackChanged(in StatusContext context) =>
-            context.status.OnStatusStackChanged(context);
+        protected virtual void OnStatusStackChanged(
+            in StatusContext context,
+            in OperationResult<int> resultStackCount) =>
+            context.status.OnStatusStackChanged(context, resultStackCount);
 
 #endregion
     }
