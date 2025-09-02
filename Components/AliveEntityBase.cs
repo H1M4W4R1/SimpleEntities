@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using JetBrains.Annotations;
+using Systems.SimpleCore.Operations;
+using Systems.SimpleCore.Utility.Enums;
 using Systems.SimpleEntities.Data;
 using Systems.SimpleEntities.Data.Affinity;
 using Systems.SimpleEntities.Data.Context;
@@ -8,6 +10,7 @@ using Systems.SimpleEntities.Data.Resistances;
 using Systems.SimpleEntities.Data.Status.Abstract;
 using Systems.SimpleEntities.Data.Status.Enums;
 using Systems.SimpleEntities.Data.Status.Storage;
+using Systems.SimpleEntities.Operations;
 using Systems.SimpleStats.Abstract;
 using Systems.SimpleStats.Abstract.Modifiers;
 using Systems.SimpleStats.Data;
@@ -27,6 +30,7 @@ namespace Systems.SimpleEntities.Components
     public abstract class AliveEntityBase : TickingEntityBase, IWithStatModifiers
     {
 #region Entity Lifecycle
+
         protected override void AssignComponents()
         {
             // Refresh entity modifiers for first time
@@ -36,7 +40,7 @@ namespace Systems.SimpleEntities.Components
         protected override void OnInitialized()
         {
             base.OnInitialized();
-            
+
             // Reset health to max
             ResetHealthToMax();
         }
@@ -64,12 +68,12 @@ namespace Systems.SimpleEntities.Components
         /// <summary>
         ///     Current health of the entity
         /// </summary>
-        [field: SerializeField] public virtual int CurrentHealth { get; protected set; }
+        [field: SerializeField] public virtual long CurrentHealth { get; protected set; }
 
         /// <summary>
         ///     Maximum health of the entity
         /// </summary>
-        [field: SerializeField] public virtual int MaxHealth { get; protected set; }
+        [field: SerializeField] public virtual long MaxHealth { get; protected set; }
 
         /// <summary>
         ///     Gets resistance of the entity
@@ -103,24 +107,33 @@ namespace Systems.SimpleEntities.Components
         ///     Heals the entity
         /// </summary>
         /// <param name="context">Context of the healing event</param>
-        public void Heal(in HealContext context)
+        /// <param name="actionSource">Source of the action</param>
+        /// <returns>Result of the operation with amount of healed health</returns>
+        public OperationResult<long> Heal(
+            in HealContext context,
+            ActionSource actionSource = ActionSource.External)
         {
             // Check if entity can be healed
-            if (!CanBeHealed(context))
+            OperationResult canHealResult = CanBeHealed(context);
+            if (!canHealResult)
             {
-                OnHealFailed(context);
-                return;
+                if (actionSource == ActionSource.Internal) return canHealResult.WithData(0L);
+                OnHealFailed(context, canHealResult.WithData(context.amount));
+                return canHealResult.WithData(0L);
             }
 
             // Compute amount of health to change
             // and update context with final amount
-            int missingHealth = MaxHealth - CurrentHealth;
-            int healthToChange = math.min(missingHealth, context.amount);
-            HealContext contextCopy = context.UpdateAmount(healthToChange);
+            long missingHealth = MaxHealth - CurrentHealth;
+            long healthToChange = math.min(missingHealth, context.amount);
 
             // Add health and execute heal handlers
             CurrentHealth += healthToChange;
-            OnHealReceived(contextCopy);
+
+            OperationResult<long> opResult = EntityOperations.Healed().WithData(healthToChange);
+            if (actionSource == ActionSource.Internal) return opResult;
+            OnHealReceived(context, opResult);
+            return opResult;
         }
 
         /// <summary>
@@ -128,14 +141,16 @@ namespace Systems.SimpleEntities.Components
         /// </summary>
         /// <param name="source">Source of the damage</param>
         /// <param name="amount">Base amount of damage</param>
+        /// <param name="actionSource">Source of the action</param>
         /// <typeparam name="TDamageAffinity">Affinity of the damage</typeparam>
-        public void Damage<TDamageAffinity>(
+        public OperationResult<long> Damage<TDamageAffinity>(
             [CanBeNull] object source,
-            int amount)
+            long amount,
+            ActionSource actionSource = ActionSource.External)
             where TDamageAffinity : AffinityType, new()
         {
             DamageContext context = DamageContext.Create<TDamageAffinity>(this, source, amount);
-            Damage(context);
+            return Damage(context, actionSource);
         }
 
         /// <summary>
@@ -143,46 +158,65 @@ namespace Systems.SimpleEntities.Components
         /// </summary>
         /// <param name="source">Source of the healing</param>
         /// <param name="amount">Base amount of healing</param>
+        /// <param name="actionSource">Source of the action</param>
         /// <typeparam name="THealingAffinity">Affinity of the healing</typeparam>
-        public void Heal<THealingAffinity>(
+        public OperationResult<long> Heal<THealingAffinity>(
             [CanBeNull] object source,
-            int amount)
+            long amount,
+            ActionSource actionSource = ActionSource.External)
             where THealingAffinity : AffinityType, new()
         {
             HealContext context = HealContext.Create<THealingAffinity>(this, source, amount);
-            Heal(context);
+            return Heal(context, actionSource);
         }
 
         /// <summary>
         ///     Deals damage to the entity
         /// </summary>
         /// <param name="context">Context of the damage event</param>
-        public void Damage(in DamageContext context)
+        /// <param name="actionSource">Source of the action</param>
+        public OperationResult<long> Damage(
+            in DamageContext context,
+            ActionSource actionSource = ActionSource.External)
         {
             // Check if entity can be damaged
+            OperationResult canBeDamagedResult = CanBeDamaged(context);
             if (!CanBeDamaged(context))
             {
-                OnDamageFailed(context);
-                return;
+                if (actionSource == ActionSource.Internal) return canBeDamagedResult.WithData(0L);
+                OnDamageFailed(context, canBeDamagedResult.WithData(context.amount));
+                return canBeDamagedResult.WithData(0L);
             }
 
             // Compute amount of health to change
-            int healthToChange = math.min(context.amount, CurrentHealth);
-            DamageContext contextCopy = context.UpdateAmount(healthToChange);
+            long healthToChange = math.min(context.amount, CurrentHealth);
 
             // Subtract health and execute damage handlers
             CurrentHealth -= healthToChange;
-            OnDamageReceived(contextCopy);
+
+            OperationResult<long> opResult = EntityOperations.Damaged().WithData(healthToChange);
+            if (actionSource == ActionSource.External)
+            {
+                OnDamageReceived(context, opResult);
+            }
 
             // If health is zero or less, kill the entity
-            if (CurrentHealth <= 0) Kill(context);
+            if (CurrentHealth > 0) return opResult;
+            return Kill(context, healthBeforeDeath: healthToChange);
         }
 
         /// <summary>
         ///     Kills the entity
         /// </summary>
-        public void Kill(in DamageContext context)
+        /// <returns>Result of the operation with amount of health after "death"</returns>
+        public OperationResult<long> Kill(
+            in DamageContext context,
+            ActionSource actionSource = ActionSource.External,
+            long healthBeforeDeath = -1)
         {
+            // Copy health if not specified
+            if (healthBeforeDeath < 0) healthBeforeDeath = CurrentHealth;
+
             // Reset health to zero (just in case)
             CurrentHealth = 0;
 
@@ -193,70 +227,80 @@ namespace Systems.SimpleEntities.Components
             if (deathSaveContext.shouldBeSaved)
             {
                 CurrentHealth = deathSaveContext.healthToSet;
-                return;
+
+                OperationResult<long> deathSaveData =
+                    EntityOperations.SavedFromDeath().WithData(CurrentHealth);
+                if (actionSource == ActionSource.Internal) return deathSaveData;
+
+                OnSavedFromDeath(context, deathSaveContext, deathSaveData);
+                return deathSaveData;
             }
 
             // Perform death events
-            OnDeath(context);
+            if (actionSource == ActionSource.Internal) return EntityOperations.Killed().WithData(0L);
+            OnDeath(context, EntityOperations.Killed().WithData(healthBeforeDeath));
+            return EntityOperations.Killed().WithData(0L);
         }
 
 
         /// <summary>
         ///     Checks if entity can be damaged
         /// </summary>
-        public virtual bool CanBeDamaged(in DamageContext context)
+        public virtual OperationResult CanBeDamaged(in DamageContext context)
         {
             if (!ReferenceEquals(context.affinityType, null)) return context.affinityType.CanBeDamaged(context);
-            return true;
+            return EntityOperations.Permitted();
         }
 
         /// <summary>
         ///     Checks if entity can be healed
         /// </summary>
-        public virtual bool CanBeHealed(in HealContext context)
+        public virtual OperationResult CanBeHealed(in HealContext context)
         {
             if (!ReferenceEquals(context.affinityType, null)) return context.affinityType.CanBeHealed(context);
-            return true;
+            return EntityOperations.Permitted();
         }
 
         /// <summary>
         ///     Called when damage is failed due to <see cref="CanBeDamaged"/>
         /// </summary>
-        protected virtual void OnDamageFailed(in DamageContext context)
+        protected virtual void OnDamageFailed(in DamageContext context, in OperationResult<long> healthToTake)
         {
-            if (!ReferenceEquals(context.affinityType, null)) context.affinityType.OnDamageFailed(context);
+            if (!ReferenceEquals(context.affinityType, null))
+                context.affinityType.OnDamageFailed(context, healthToTake);
         }
 
         /// <summary>
         ///     Executes when entity takes damage
         /// </summary>
-        protected virtual void OnDamageReceived(in DamageContext context)
+        protected virtual void OnDamageReceived(in DamageContext context, in OperationResult<long> healthLost)
         {
-            if (!ReferenceEquals(context.affinityType, null)) context.affinityType.OnDamageReceived(context);
+            if (!ReferenceEquals(context.affinityType, null))
+                context.affinityType.OnDamageReceived(context, healthLost);
         }
 
 
         /// <summary>
         ///     Called when healing is failed due to <see cref="CanBeHealed"/>
         /// </summary>
-        protected virtual void OnHealFailed(in HealContext context)
+        protected virtual void OnHealFailed(in HealContext context, in OperationResult<long> healthToAdd)
         {
-            if (!ReferenceEquals(context.affinityType, null)) context.affinityType.OnHealingFailed(context);
+            if (!ReferenceEquals(context.affinityType, null))
+                context.affinityType.OnHealingFailed(context, healthToAdd);
         }
 
         /// <summary>
         ///     Executes when entity takes healing
         /// </summary>
-        protected virtual void OnHealReceived(in HealContext context)
+        protected virtual void OnHealReceived(in HealContext context, in OperationResult<long> healthAdded)
         {
-            if (!ReferenceEquals(context.affinityType, null)) context.affinityType.OnHealingReceived(context);
+            if (!ReferenceEquals(context.affinityType, null))
+                context.affinityType.OnHealingReceived(context, healthAdded);
         }
 
         /// <summary>
         ///     Checks if entity should be protected from death
         /// </summary>
-        /// <param name="context">Context of the damage event</param>
-        /// <returns>True if entity should not be killed</returns>
         protected virtual DeathSaveContext CanSaveFromDeath(in DamageContext context)
         {
             if (!ReferenceEquals(context.affinityType, null))
@@ -265,12 +309,23 @@ namespace Systems.SimpleEntities.Components
         }
 
         /// <summary>
+        ///     Called when entity is saved from death
+        /// </summary>
+        protected virtual void OnSavedFromDeath(
+            in DamageContext damageContext,
+            in DeathSaveContext context,
+            in OperationResult<long> healthSet)
+        {
+            if (!ReferenceEquals(damageContext.affinityType, null))
+                damageContext.affinityType.OnSavedFromDeath(damageContext, context, healthSet);
+        }
+
+        /// <summary>
         ///     Executes when entity dies
         /// </summary>
-        /// <param name="context">Context of the damage event that killed the entity</param>
-        protected virtual void OnDeath(in DamageContext context)
+        protected virtual void OnDeath(in DamageContext context, in OperationResult<long> healthLost)
         {
-            if (!ReferenceEquals(context.affinityType, null)) context.affinityType.OnDeath(context);
+            if (!ReferenceEquals(context.affinityType, null)) context.affinityType.OnDeath(context, healthLost);
         }
 
 #endregion
@@ -380,14 +435,14 @@ namespace Systems.SimpleEntities.Components
                 OnStatusApplicationFailed(checkContext);
                 return ApplyStatusResult.MaxStackReached;
             }
-            
+
             // If status can be stacked, stack it
             // StatusContext requires amount changed to be present rather than new value
             int stackChange = math.min(stackCount, status.MaxStack - statusReference.stackCount);
             StatusContext modifyStatusContext = new(this, status, stackChange);
             statusReference.stackCount += stackChange;
             OnStatusStackChanged(modifyStatusContext);
-            
+
             // Refresh applied status reference as it's accessed as struct
             _appliedStatuses[statusReferenceIndex] = statusReference;
             return ApplyStatusResult.Success;
@@ -456,7 +511,7 @@ namespace Systems.SimpleEntities.Components
                 OnStatusRemovalFailed(checkContext);
                 return RemoveStatusResult.NotEnoughStacks;
             }
-            
+
             // Remove stacks or clear status to zero if stack are overflown
             int stackChange = math.min(stackCount, statusReference.stackCount);
             statusReference.stackCount -= stackChange;

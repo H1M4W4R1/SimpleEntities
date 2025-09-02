@@ -13,9 +13,9 @@
         /// <summary>
         ///     Health to set for the entity after saving from death
         /// </summary>
-        public readonly int healthToSet;
+        public readonly long healthToSet;
 
-        public DeathSaveContext(bool shouldBeSaved, int healthToSet)
+        public DeathSaveContext(bool shouldBeSaved, long healthToSet)
         {
             this.shouldBeSaved = shouldBeSaved;
             this.healthToSet = healthToSet;

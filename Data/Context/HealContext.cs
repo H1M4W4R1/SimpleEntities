@@ -34,19 +34,14 @@ namespace Systems.SimpleEntities.Data.Context
         /// <summary>
         ///     Amount of healing
         /// </summary>
-        public readonly int amount;
-
-        public HealContext UpdateAmount(int newAmount)
-        {
-            return new HealContext(target, source, affinityType, resistanceValue, newAmount);
-        }
+        public readonly long amount;
         
         public HealContext(
             [NotNull] AliveEntityBase target,
             [CanBeNull] object source,
             [CanBeNull] AffinityType affinityType,
             float resistanceValue,
-            int amount)
+            long amount)
         {
             Assert.IsTrue(amount >= 0, "Amount of healing must be greater than or equal to zero");
             Assert.IsNotNull(target, "Target cannot be null");
@@ -54,13 +49,13 @@ namespace Systems.SimpleEntities.Data.Context
             this.source = source;
             this.affinityType = affinityType;
             this.resistanceValue = resistanceValue;
-            this.amount = (int) (amount * math.clamp(1 - resistanceValue, 0, 1));
+            this.amount = (long) (amount * math.clamp(1 - resistanceValue, 0, 1));
         }
 
         public static HealContext Create<TDamageAffinity>(
             [NotNull] AliveEntityBase target,
             [CanBeNull] object source,
-            int amount)
+            long amount)
             where TDamageAffinity : AffinityType, new()
         {
             Assert.IsNotNull(target, "Target cannot be null");

@@ -1,5 +1,7 @@
 ﻿using Systems.SimpleCore.Automation.Attributes;
+using Systems.SimpleCore.Operations;
 using Systems.SimpleEntities.Data.Context;
+using Systems.SimpleEntities.Operations;
 using UnityEngine;
 
 namespace Systems.SimpleEntities.Data.Affinity
@@ -14,12 +16,12 @@ namespace Systems.SimpleEntities.Data.Affinity
         /// <summary>
         ///     Checks if entity can be damaged
         /// </summary>
-        public virtual bool CanBeDamaged(in DamageContext context) => true;
-        
+        public virtual OperationResult CanBeDamaged(in DamageContext context) => EntityOperations.Permitted();
+
         /// <summary>
         ///     Checks if entity can be healed
         /// </summary>
-        public virtual bool CanBeHealed(in HealContext context) => true;
+        public virtual OperationResult CanBeHealed(in HealContext context) => EntityOperations.Permitted();
 
         /// <summary>
         ///     Checks if entity can be saved from death and heals entity to desired health amount
@@ -32,14 +34,18 @@ namespace Systems.SimpleEntities.Data.Affinity
         /// <summary>
         ///     Executed when entity takes damage
         /// </summary>
-        protected internal virtual void OnDamageReceived(in DamageContext context)
+        protected internal virtual void OnDamageReceived(
+            in DamageContext context,
+            in OperationResult<long> healthLost)
         {
         }
-        
+
         /// <summary>
         ///     Executed when damage is failed due to <see cref="CanBeDamaged"/>
         /// </summary>
-        protected internal virtual void OnDamageFailed(in DamageContext context)
+        protected internal virtual void OnDamageFailed(
+            in DamageContext context,
+            in OperationResult<long> healthToTake)
         {
         }
 
@@ -47,7 +53,7 @@ namespace Systems.SimpleEntities.Data.Affinity
         /// <summary>
         ///     Executed when entity dies
         /// </summary>
-        protected internal virtual void OnDeath(in DamageContext context)
+        protected internal virtual void OnDeath(in DamageContext context, in OperationResult<long> healthLost)
         {
         }
 
@@ -55,14 +61,25 @@ namespace Systems.SimpleEntities.Data.Affinity
         /// <summary>
         ///     Executed when entity takes healing
         /// </summary>
-        protected internal virtual void OnHealingReceived(in HealContext context)
+        protected internal virtual void OnHealingReceived(
+            in HealContext context,
+            in OperationResult<long> healthAdded)
         {
         }
 
         /// <summary>
         ///     Executed when healing is failed due to <see cref="CanBeHealed"/>
         /// </summary>
-        protected internal virtual void OnHealingFailed(in HealContext context)
+        protected internal virtual void OnHealingFailed(
+            in HealContext context,
+            in OperationResult<long> healthToAdd)
+        {
+        }
+
+        protected internal virtual void OnSavedFromDeath(
+            in DamageContext damageContext,
+            in DeathSaveContext context,
+            in OperationResult<long> healthSet)
         {
         }
     }
