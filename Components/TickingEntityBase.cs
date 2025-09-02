@@ -1,4 +1,6 @@
-﻿using Systems.SimpleEntities.Data.Enums;
+﻿using Systems.SimpleCore.Operations;
+using Systems.SimpleEntities.Data.Enums;
+using Systems.SimpleEntities.Operations;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -24,15 +26,19 @@ namespace Systems.SimpleEntities.Components
         /// </summary>
         /// <param name="flags">Flags for tick execution</param>
         /// <param name="deltaTime">Time passed since last tick</param>
-        public void ExecuteTick(float deltaTime, EntityTickFlags flags = EntityTickFlags.None)
+        public OperationResult ExecuteTick(float deltaTime, EntityTickFlags flags = EntityTickFlags.None)
         {
             // Skip if tick cannot be performed, otherwise execute
-            if (!CanTick() && (flags & EntityTickFlags.ForceTick) == 0) return;
+            OperationResult canTickResult = CanTick();
+            if (!canTickResult && (flags & EntityTickFlags.ForceTick) == 0) return canTickResult;
             OnTick(deltaTime);
 
             // Update timer and limit to 0
             _tickTimer -= deltaTime;
             _tickTimer = math.max(_tickTimer, 0f);
+
+            // Tick was executed successfully
+            return EntityOperations.TickExecuted();
         }
 
         internal void HandleEntityTick()
@@ -68,7 +74,7 @@ namespace Systems.SimpleEntities.Components
         ///     If time can pass, but tick cannot, it will be executed at next frame
         ///     when tick execution possibility is true
         /// </remarks>
-        public virtual bool CanTick() => true;
+        public virtual OperationResult CanTick() => EntityOperations.Permitted();
 
 #endregion
 
