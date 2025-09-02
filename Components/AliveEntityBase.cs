@@ -26,12 +26,17 @@ namespace Systems.SimpleEntities.Components
     /// </remarks>
     public abstract class AliveEntityBase : TickingEntityBase, IWithStatModifiers
     {
-#region Unity Lifecycle
+#region Entity Lifecycle
         protected override void AssignComponents()
         {
             // Refresh entity modifiers for first time
             RefreshModifiersIfNecessary();
+        }
 
+        protected override void OnInitialized()
+        {
+            base.OnInitialized();
+            
             // Reset health to max
             ResetHealthToMax();
         }
@@ -303,13 +308,13 @@ namespace Systems.SimpleEntities.Components
         /// <summary>
         ///     Container for all applied status effects
         /// </summary>
-        protected readonly List<AppliedStatusData> appliedStatuses = new();
+        private readonly List<AppliedStatusData> _appliedStatuses = new();
 
         /// <summary>
         ///     Acquires all applied status effects
         /// </summary>
         /// <returns>Read-only list of applied status effects</returns>
-        public IReadOnlyList<AppliedStatusData> GetAllAppliedStatuses() => appliedStatuses;
+        public IReadOnlyList<AppliedStatusData> GetAllAppliedStatuses() => _appliedStatuses;
 
         /// <summary>
         ///     Applies a status to the entity
@@ -350,10 +355,10 @@ namespace Systems.SimpleEntities.Components
             // Find status if already applied
             AppliedStatusData statusReference = default;
             int statusReferenceIndex = -1;
-            for (int i = 0; i < appliedStatuses.Count; i++)
+            for (int i = 0; i < _appliedStatuses.Count; i++)
             {
-                if (appliedStatuses[i].status != status) continue;
-                statusReference = appliedStatuses[i];
+                if (_appliedStatuses[i].status != status) continue;
+                statusReference = _appliedStatuses[i];
                 statusReferenceIndex = i;
                 break;
             }
@@ -363,7 +368,7 @@ namespace Systems.SimpleEntities.Components
             {
                 StatusContext addStatusContext = new(this, status, stackCount);
                 statusReference = new AppliedStatusData(status, stackCount);
-                appliedStatuses.Add(statusReference);
+                _appliedStatuses.Add(statusReference);
                 OnStatusApplied(addStatusContext);
                 return ApplyStatusResult.Success;
             }
@@ -375,12 +380,16 @@ namespace Systems.SimpleEntities.Components
                 OnStatusApplicationFailed(checkContext);
                 return ApplyStatusResult.MaxStackReached;
             }
-
+            
             // If status can be stacked, stack it
-            StatusContext modifyStatusContext = new(this, status, stackCount);
-            statusReference.stackCount += stackCount;
+            // StatusContext requires amount changed to be present rather than new value
+            int stackChange = math.min(stackCount, status.MaxStack - statusReference.stackCount);
+            StatusContext modifyStatusContext = new(this, status, stackChange);
+            statusReference.stackCount += stackChange;
             OnStatusStackChanged(modifyStatusContext);
-            appliedStatuses[statusReferenceIndex] = statusReference;
+            
+            // Refresh applied status reference as it's accessed as struct
+            _appliedStatuses[statusReferenceIndex] = statusReference;
             return ApplyStatusResult.Success;
         }
 
@@ -417,11 +426,11 @@ namespace Systems.SimpleEntities.Components
             // Find status if already applied
             AppliedStatusData statusReference = default;
             int statusReferenceIndex = -1;
-            for (int i = 0; i < appliedStatuses.Count; i++)
+            for (int i = 0; i < _appliedStatuses.Count; i++)
             {
-                if (appliedStatuses[i].status != status) continue;
+                if (_appliedStatuses[i].status != status) continue;
 
-                statusReference = appliedStatuses[i];
+                statusReference = _appliedStatuses[i];
                 statusReferenceIndex = i;
                 break;
             }
@@ -447,26 +456,27 @@ namespace Systems.SimpleEntities.Components
                 OnStatusRemovalFailed(checkContext);
                 return RemoveStatusResult.NotEnoughStacks;
             }
-
-            // Remove stacks
-            statusReference.stackCount -= stackCount;
+            
+            // Remove stacks or clear status to zero if stack are overflown
+            int stackChange = math.min(stackCount, statusReference.stackCount);
+            statusReference.stackCount -= stackChange;
 
             // If status is now empty, remove it from the list
             if (statusReference.stackCount == 0 && statusReferenceIndex != -1)
             {
-                StatusContext removeStatusContext = new(this, status, statusReference.stackCount);
+                StatusContext removeStatusContext = new(this, status, 0);
                 OnStatusRemoved(removeStatusContext);
 
                 // Remove status from list
-                appliedStatuses.RemoveAt(statusReferenceIndex);
+                _appliedStatuses.RemoveAt(statusReferenceIndex);
             }
             else // If not, then handle stack reduction
             {
-                StatusContext reduceStackContext = new(this, status, -stackCount);
+                StatusContext reduceStackContext = new(this, status, -stackChange);
                 OnStatusStackChanged(reduceStackContext);
 
                 // Update applied statuses
-                appliedStatuses[statusReferenceIndex] = statusReference;
+                _appliedStatuses[statusReferenceIndex] = statusReference;
             }
 
             return RemoveStatusResult.Success;
@@ -513,11 +523,11 @@ namespace Systems.SimpleEntities.Components
         /// <returns>Stack count of the status</returns>
         public int GetStatusStackCount([NotNull] StatusBase status)
         {
-            for (int i = 0; i < appliedStatuses.Count; i++)
+            for (int i = 0; i < _appliedStatuses.Count; i++)
             {
-                if (appliedStatuses[i].status != status) continue;
+                if (_appliedStatuses[i].status != status) continue;
 
-                return appliedStatuses[i].stackCount;
+                return _appliedStatuses[i].stackCount;
             }
 
             return 0;
@@ -528,10 +538,10 @@ namespace Systems.SimpleEntities.Components
         /// </summary>
         protected void HandleStatusTick(float deltaTime)
         {
-            for (int i = 0; i < appliedStatuses.Count; i++)
+            for (int i = 0; i < _appliedStatuses.Count; i++)
             {
-                StatusContext tickContext = new(this, appliedStatuses[i].status, appliedStatuses[i].stackCount);
-                appliedStatuses[i].status.OnStatusTick(tickContext, deltaTime);
+                StatusContext tickContext = new(this, _appliedStatuses[i].status, _appliedStatuses[i].stackCount);
+                _appliedStatuses[i].status.OnStatusTick(tickContext, deltaTime);
             }
         }
 
