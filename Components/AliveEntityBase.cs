@@ -264,38 +264,38 @@ namespace Systems.SimpleEntities.Components
         /// <summary>
         ///     Called when damage is failed due to <see cref="CanBeDamaged"/>
         /// </summary>
-        protected virtual void OnDamageFailed(in DamageContext context, in OperationResult<long> healthToTake)
+        protected virtual void OnDamageFailed(in DamageContext context, in OperationResult<long> resultHealthToTake)
         {
             if (!ReferenceEquals(context.affinityType, null))
-                context.affinityType.OnDamageFailed(context, healthToTake);
+                context.affinityType.OnDamageFailed(context, resultHealthToTake);
         }
 
         /// <summary>
         ///     Executes when entity takes damage
         /// </summary>
-        protected virtual void OnDamageReceived(in DamageContext context, in OperationResult<long> healthLost)
+        protected virtual void OnDamageReceived(in DamageContext context, in OperationResult<long> resultHealthLost)
         {
             if (!ReferenceEquals(context.affinityType, null))
-                context.affinityType.OnDamageReceived(context, healthLost);
+                context.affinityType.OnDamageReceived(context, resultHealthLost);
         }
 
 
         /// <summary>
         ///     Called when healing is failed due to <see cref="CanBeHealed"/>
         /// </summary>
-        protected virtual void OnHealFailed(in HealContext context, in OperationResult<long> healthToAdd)
+        protected virtual void OnHealFailed(in HealContext context, in OperationResult<long> resultHealthToAdd)
         {
             if (!ReferenceEquals(context.affinityType, null))
-                context.affinityType.OnHealingFailed(context, healthToAdd);
+                context.affinityType.OnHealingFailed(context, resultHealthToAdd);
         }
 
         /// <summary>
         ///     Executes when entity takes healing
         /// </summary>
-        protected virtual void OnHealReceived(in HealContext context, in OperationResult<long> healthAdded)
+        protected virtual void OnHealReceived(in HealContext context, in OperationResult<long> resultHealthAdded)
         {
             if (!ReferenceEquals(context.affinityType, null))
-                context.affinityType.OnHealingReceived(context, healthAdded);
+                context.affinityType.OnHealingReceived(context, resultHealthAdded);
         }
 
         /// <summary>
@@ -314,18 +314,18 @@ namespace Systems.SimpleEntities.Components
         protected virtual void OnSavedFromDeath(
             in DamageContext damageContext,
             in DeathSaveContext context,
-            in OperationResult<long> healthSet)
+            in OperationResult<long> resultHealthSet)
         {
             if (!ReferenceEquals(damageContext.affinityType, null))
-                damageContext.affinityType.OnSavedFromDeath(damageContext, context, healthSet);
+                damageContext.affinityType.OnSavedFromDeath(damageContext, context, resultHealthSet);
         }
 
         /// <summary>
         ///     Executes when entity dies
         /// </summary>
-        protected virtual void OnDeath(in DamageContext context, in OperationResult<long> healthLost)
+        protected virtual void OnDeath(in DamageContext context, in OperationResult<long> resultHealthLost)
         {
-            if (!ReferenceEquals(context.affinityType, null)) context.affinityType.OnDeath(context, healthLost);
+            if (!ReferenceEquals(context.affinityType, null)) context.affinityType.OnDeath(context, resultHealthLost);
         }
 
 #endregion

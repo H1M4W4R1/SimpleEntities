@@ -36,7 +36,7 @@ namespace Systems.SimpleEntities.Data.Affinity
         /// </summary>
         protected internal virtual void OnDamageReceived(
             in DamageContext context,
-            in OperationResult<long> healthLost)
+            in OperationResult<long> resultHealthLost)
         {
         }
 
@@ -45,7 +45,7 @@ namespace Systems.SimpleEntities.Data.Affinity
         /// </summary>
         protected internal virtual void OnDamageFailed(
             in DamageContext context,
-            in OperationResult<long> healthToTake)
+            in OperationResult<long> resultHealthToTake)
         {
         }
 
@@ -53,7 +53,7 @@ namespace Systems.SimpleEntities.Data.Affinity
         /// <summary>
         ///     Executed when entity dies
         /// </summary>
-        protected internal virtual void OnDeath(in DamageContext context, in OperationResult<long> healthLost)
+        protected internal virtual void OnDeath(in DamageContext context, in OperationResult<long> resultHealthLost)
         {
         }
 
@@ -63,7 +63,7 @@ namespace Systems.SimpleEntities.Data.Affinity
         /// </summary>
         protected internal virtual void OnHealingReceived(
             in HealContext context,
-            in OperationResult<long> healthAdded)
+            in OperationResult<long> resultHealthAdded)
         {
         }
 
@@ -72,14 +72,14 @@ namespace Systems.SimpleEntities.Data.Affinity
         /// </summary>
         protected internal virtual void OnHealingFailed(
             in HealContext context,
-            in OperationResult<long> healthToAdd)
+            in OperationResult<long> resultHealthToAdd)
         {
         }
 
         protected internal virtual void OnSavedFromDeath(
             in DamageContext damageContext,
             in DeathSaveContext context,
-            in OperationResult<long> healthSet)
+            in OperationResult<long> resultHealthSet)
         {
         }
     }
