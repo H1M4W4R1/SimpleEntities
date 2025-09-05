@@ -28,6 +28,11 @@ namespace Systems.SimpleEntities.Components
         {
         }
 
+        protected virtual void OnTeardown()
+        {
+            
+        }
+
 #region Unity Lifecycle
 
         protected void Awake()
@@ -51,11 +56,9 @@ namespace Systems.SimpleEntities.Components
             OnEntityDeactivated();
         }
 
-        protected void Update()
+        private void OnDestroy()
         {
-            // Handle entity tick if it is a ticking entity
-            if(this is TickingEntityBase tickingEntity)
-                tickingEntity.HandleEntityTick();
+            OnTeardown();
         }
 
 #endregion
