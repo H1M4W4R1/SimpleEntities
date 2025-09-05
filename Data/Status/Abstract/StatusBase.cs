@@ -24,12 +24,12 @@ namespace Systems.SimpleEntities.Data.Status.Abstract
         /// <summary>
         ///     Checks if status can be applied to entity.
         /// </summary>
-        public virtual OperationResult CanApply(in StatusContext context) => EntityOperations.Permitted();
+        protected internal virtual OperationResult CanApply(in StatusContext context) => EntityOperations.Permitted();
 
         /// <summary>
         ///     Checks if status can be removed from entity.
         /// </summary>
-        public virtual OperationResult CanRemove(in StatusContext context) => EntityOperations.Permitted();
+        protected internal virtual OperationResult CanRemove(in StatusContext context) => EntityOperations.Permitted();
 
 
         /// <summary>

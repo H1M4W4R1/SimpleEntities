@@ -246,7 +246,7 @@ namespace Systems.SimpleEntities.Components
         /// <summary>
         ///     Checks if entity can be damaged
         /// </summary>
-        public virtual OperationResult CanBeDamaged(in DamageContext context)
+        protected virtual OperationResult CanBeDamaged(in DamageContext context)
         {
             if (!ReferenceEquals(context.affinityType, null)) return context.affinityType.CanBeDamaged(context);
             return EntityOperations.Permitted();
@@ -255,7 +255,7 @@ namespace Systems.SimpleEntities.Components
         /// <summary>
         ///     Checks if entity can be healed
         /// </summary>
-        public virtual OperationResult CanBeHealed(in HealContext context)
+        protected virtual OperationResult CanBeHealed(in HealContext context)
         {
             if (!ReferenceEquals(context.affinityType, null)) return context.affinityType.CanBeHealed(context);
             return EntityOperations.Permitted();
@@ -657,13 +657,13 @@ namespace Systems.SimpleEntities.Components
         /// <summary>
         ///     Check if status can be applied to the entity
         /// </summary>
-        public virtual OperationResult CanApplyStatus(in StatusContext context) =>
+        protected virtual OperationResult CanApplyStatus(in StatusContext context) =>
             context.status.CanApply(context);
 
         /// <summary>
         ///     Checks if status can be removed from the entity
         /// </summary>
-        public virtual OperationResult CanRemoveStatus(in StatusContext context) =>
+        protected virtual OperationResult CanRemoveStatus(in StatusContext context) =>
             context.status.CanRemove(context);
 
         /// <summary>
