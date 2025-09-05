@@ -16,17 +16,17 @@ namespace Systems.SimpleEntities.Data.Affinity
         /// <summary>
         ///     Checks if entity can be damaged
         /// </summary>
-        public virtual OperationResult CanBeDamaged(in DamageContext context) => EntityOperations.Permitted();
+        protected internal virtual OperationResult CanBeDamaged(in DamageContext context) => EntityOperations.Permitted();
 
         /// <summary>
         ///     Checks if entity can be healed
         /// </summary>
-        public virtual OperationResult CanBeHealed(in HealContext context) => EntityOperations.Permitted();
+        protected internal virtual OperationResult CanBeHealed(in HealContext context) => EntityOperations.Permitted();
 
         /// <summary>
         ///     Checks if entity can be saved from death and heals entity to desired health amount
         /// </summary>
-        public virtual DeathSaveContext CanSaveFromDeath(in DamageContext context) =>
+        protected internal virtual DeathSaveContext CanSaveFromDeath(in DamageContext context) =>
             new(false, 0);
 
 #endregion
