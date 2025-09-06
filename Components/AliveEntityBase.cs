@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using JetBrains.Annotations;
 using Systems.SimpleCore.Operations;
+using Systems.SimpleCore.Storage;
 using Systems.SimpleCore.Utility.Enums;
 using Systems.SimpleEntities.Data;
 using Systems.SimpleEntities.Data.Affinity;
@@ -86,8 +87,9 @@ namespace Systems.SimpleEntities.Components
             float result = 0;
 
             // Get all resistances from database
-            IReadOnlyList<ResistanceBase> resistances = StatsDatabase.GetAll<ResistanceBase>();
-
+            ROListAccess<ResistanceBase> resistanceAccess = StatsDatabase.GetAll<ResistanceBase>();
+            IReadOnlyList<ResistanceBase> resistances = resistanceAccess.List;
+            
             IWithStatModifiers statsAccess = this;
             foreach (ResistanceBase resistance in resistances)
             {
@@ -99,7 +101,8 @@ namespace Systems.SimpleEntities.Components
                 float finalValue = resistance.GetFinalValue(modifierCollection);
                 result += finalValue;
             }
-
+            
+            resistanceAccess.Release();
             return result;
         }
 
