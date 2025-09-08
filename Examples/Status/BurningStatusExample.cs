@@ -13,18 +13,19 @@ namespace Systems.SimpleEntities.Examples.Status
     {
         protected internal override void OnStatusApplied(
             in StatusContext context,
-            in OperationResult<int> resultStackCount)
+            in OperationResult result,
+            int currentStacks)
         {
-            base.OnStatusApplied(in context, resultStackCount);
-            Debug.Log($"{context.entity.name} is burning with {resultStackCount.data} stacks!");
+            base.OnStatusApplied(in context, result, currentStacks);
+            Debug.Log($"{context.entity.name} is burning with {currentStacks} stacks!");
         }
 
         protected internal override void OnStatusApplicationFailed(
             in StatusContext context,
-            in OperationResult<int> resultExpectedStacks)
+            in OperationResult result)
         {
-            base.OnStatusApplicationFailed(in context, in resultExpectedStacks);
-            if (OperationResult.AreSimilar(resultExpectedStacks, StatusOperations.MaxStackReached()))
+            base.OnStatusApplicationFailed(in context, in result);
+            if (OperationResult.AreSimilar(result, StatusOperations.MaxStackReached()))
             {
                 Debug.Log($"{context.entity.name} is already burning at max stacks!");
             }
@@ -32,18 +33,19 @@ namespace Systems.SimpleEntities.Examples.Status
 
         protected internal override void OnStatusStackChanged(
             in StatusContext context,
-            in OperationResult<int> resultStackCount)
+            in OperationResult result,
+            int currentStacks)
         {
-            base.OnStatusStackChanged(in context, resultStackCount);
-            Debug.Log($"{context.entity.name} is burning with {resultStackCount.data} stacks!");
+            base.OnStatusStackChanged(in context, result, currentStacks);
+            Debug.Log($"{context.entity.name} is burning with {currentStacks} stacks!");
         }
 
         protected internal override void OnStatusRemoved(
             in StatusContext context,
-            in OperationResult<int> resultStackCount)
+            in OperationResult resultStackCount)
         {
             base.OnStatusRemoved(in context, resultStackCount);
-            Debug.Log($"{context.entity.name} is no longer burning with {resultStackCount.data} stacks!");
+            Debug.Log($"{context.entity.name} is no longer burning!");
         }
     }
 }

@@ -37,7 +37,7 @@ namespace Systems.SimpleEntities.Data.Status.Abstract
         /// </summary>
         protected internal virtual void OnStatusApplicationFailed(
             in StatusContext context,
-            in OperationResult<int> resultExpectedStacks)
+            in OperationResult result)
         {
         }
 
@@ -46,7 +46,8 @@ namespace Systems.SimpleEntities.Data.Status.Abstract
         /// </summary>
         protected internal virtual void OnStatusApplied(
             in StatusContext context,
-            in OperationResult<int> resultStackCount)
+            in OperationResult result,
+            int currentStacks)
         {
         }
 
@@ -56,7 +57,7 @@ namespace Systems.SimpleEntities.Data.Status.Abstract
         /// </summary>
         protected internal virtual void OnStatusRemovalFailed(
             in StatusContext context,
-            in OperationResult<int> resultExpectedStacks)
+            in OperationResult result)
         {
         }
 
@@ -65,7 +66,7 @@ namespace Systems.SimpleEntities.Data.Status.Abstract
         /// </summary>
         protected internal virtual void OnStatusRemoved(
             in StatusContext context,
-            in OperationResult<int> resultStackCount)
+            in OperationResult result)
         {
         }
 
@@ -74,7 +75,8 @@ namespace Systems.SimpleEntities.Data.Status.Abstract
         /// </summary>
         protected internal virtual void OnStatusStackChanged(
             in StatusContext context,
-            in OperationResult<int> resultStackCount)
+            in OperationResult result,
+            int currentStacks)
         {
         }
 

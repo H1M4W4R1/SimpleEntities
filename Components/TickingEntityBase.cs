@@ -1,9 +1,4 @@
-﻿using Systems.SimpleCore.Operations;
-using Systems.SimpleCore.Timing;
-using Systems.SimpleEntities.Data.Enums;
-using Systems.SimpleEntities.Operations;
-using Unity.Mathematics;
-using UnityEngine;
+﻿using Systems.SimpleCore.Timing;
 
 namespace Systems.SimpleEntities.Components
 {

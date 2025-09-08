@@ -26,13 +26,13 @@ namespace Systems.SimpleEntities.Data.Context
         ///     For apply and remove status it returns new stack count.
         ///     In case of status stack changed it returns changed amount with sign.
         /// </remarks>
-        public readonly int currentStackCount;
+        public readonly int expectedStackCount;
 
-        public StatusContext([NotNull] AliveEntityBase entity, [NotNull] StatusBase status, int currentStackCount)
+        public StatusContext([NotNull] AliveEntityBase entity, [NotNull] StatusBase status, int expectedStackCount)
         {
             this.entity = entity;
             this.status = status;
-            this.currentStackCount = currentStackCount;
+            this.expectedStackCount = expectedStackCount;
         }
     }
 }

@@ -16,12 +16,14 @@ namespace Systems.SimpleEntities.Data.Affinity
         /// <summary>
         ///     Checks if entity can be damaged
         /// </summary>
-        protected internal virtual OperationResult CanBeDamaged(in DamageContext context) => EntityOperations.Permitted();
+        protected internal virtual OperationResult CanBeDamaged(in DamageContext context)
+            => EntityOperations.Permitted();
 
         /// <summary>
         ///     Checks if entity can be healed
         /// </summary>
-        protected internal virtual OperationResult CanBeHealed(in HealContext context) => EntityOperations.Permitted();
+        protected internal virtual OperationResult CanBeHealed(in HealContext context)
+            => EntityOperations.Permitted();
 
         /// <summary>
         ///     Checks if entity can be saved from death and heals entity to desired health amount
@@ -36,7 +38,8 @@ namespace Systems.SimpleEntities.Data.Affinity
         /// </summary>
         protected internal virtual void OnDamageReceived(
             in DamageContext context,
-            in OperationResult<long> resultHealthLost)
+            in OperationResult result,
+            long healthLost)
         {
         }
 
@@ -45,7 +48,7 @@ namespace Systems.SimpleEntities.Data.Affinity
         /// </summary>
         protected internal virtual void OnDamageFailed(
             in DamageContext context,
-            in OperationResult<long> resultHealthToTake)
+            in OperationResult result)
         {
         }
 
@@ -53,7 +56,10 @@ namespace Systems.SimpleEntities.Data.Affinity
         /// <summary>
         ///     Executed when entity dies
         /// </summary>
-        protected internal virtual void OnDeath(in DamageContext context, in OperationResult<long> resultHealthLost)
+        protected internal virtual void OnDeath(
+            in DamageContext context,
+            in OperationResult result,
+            long healthLost)
         {
         }
 
@@ -63,7 +69,8 @@ namespace Systems.SimpleEntities.Data.Affinity
         /// </summary>
         protected internal virtual void OnHealingReceived(
             in HealContext context,
-            in OperationResult<long> resultHealthAdded)
+            in OperationResult result,
+            long healthAdded)
         {
         }
 
@@ -72,14 +79,15 @@ namespace Systems.SimpleEntities.Data.Affinity
         /// </summary>
         protected internal virtual void OnHealingFailed(
             in HealContext context,
-            in OperationResult<long> resultHealthToAdd)
+            in OperationResult result)
         {
         }
 
         protected internal virtual void OnSavedFromDeath(
             in DamageContext damageContext,
             in DeathSaveContext context,
-            in OperationResult<long> resultHealthSet)
+            in OperationResult result,
+            long healthSet)
         {
         }
     }
